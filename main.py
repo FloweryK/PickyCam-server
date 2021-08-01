@@ -6,7 +6,7 @@ import torchvision.transforms.functional as F
 from PIL import Image
 from skimage.feature import canny
 from skimage.color import rgb2gray
-from mmdetection.mmdet.apis import init_detector, inference_detector
+from mmdet.apis import init_detector, inference_detector
 from edgeconnect.src.networks import EdgeGenerator, InpaintGenerator
 from config import *
 
