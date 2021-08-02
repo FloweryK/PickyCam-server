@@ -53,6 +53,24 @@ class Memory:
 		self.background[is_changed & is_background] = img[is_changed & is_background]
 
 
+def boundaries(mask):
+	pad = 1
+	mask = np.pad(mask, ((pad, pad), (pad, pad), (0, 0)), 'constant', constant_values=0)
+	mask_right = np.roll(mask, pad, axis=1)
+	mask_left = np.roll(mask, -pad, axis=1)
+	mask_up = np.roll(mask, pad, axis=0)
+	mask_down = np.roll(mask, -pad, axis=0)
+
+	outer = np.logical_or.reduce(((mask_right-mask).astype(bool), (mask_left-mask).astype(bool), (mask_up-mask).astype(bool), (mask_down-mask).astype(bool))).astype(np.uint8)
+	inner = np.logical_or.reduce(((mask-mask_right).astype(bool), (mask-mask_left).astype(bool), (mask-mask_up).astype(bool), (mask-mask_down).astype(bool))).astype(np.uint8)
+
+	outer = outer[pad:-pad, pad:-pad, :]
+	inner = inner[pad:-pad, pad:-pad, :]
+
+	return outer, inner
+
+
+
 def main():
 	# capture webcam
 	# if using webcam, the argument in VideoCapture represent the index of video device.
@@ -103,6 +121,7 @@ def main():
 
 			# the result is in C*H*W, so convert it into H*W*C
 			img_generated = np.moveaxis(img_generated, 0, -1)
+			img_generated[:, :, [0, 2]] = img_generated[:, :, [2, 0]]
 			img_generated = cv2.resize(img_generated, (width, height), interpolation=cv2.INTER_LINEAR)
 			img_generated = cv2.convertScaleAbs(img_generated, alpha=(255.0))
 
@@ -116,10 +135,13 @@ def main():
 			canvas[mask == 0] = img[mask == 0]
 
 			# secondly, paint background with memory if there's some relavant background memory
-			canvas[memory.has_memory & (mask == 1)] = memory.background[memory.has_memory & (mask == 1)]
+			canvas[(mask == 1) & memory.has_memory] = memory.background[(mask == 1) & memory.has_memory]
 
 			# third, resize and crop inpainted image
-			canvas[(~memory.has_memory) & (mask == 1)] = img_generated[(~memory.has_memory) & (mask == 1)]
+			canvas[(mask == 1) & (~memory.has_memory)] = img_generated[(mask == 1) & (~memory.has_memory)]
+
+			# balance alpha
+			# outer, inner = boundaries(mask)
 
 			# measure end time and calculate fps
 			end = time.time()
