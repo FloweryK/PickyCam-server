@@ -9,17 +9,19 @@ from torchvision import models
 from torchvision import transforms as T
 from edgeconnect.src.networks import EdgeGenerator, InpaintGenerator
 
-DEVICE = 'cuda'
+DEVICE = 'cpu'
 TARGET_CLASS = 15
 MODEL_EDGE_CHECKPOINT_PATH = 'edgeconnect/checkpoints/places2/EdgeModel_gen.pth'
-MODEL_INPAINT_CHECKPOINT_PATH = 'edgeconnect//checkpoints/places2/InpaintingModel_gen.pth'
+MODEL_INPAINT_CHECKPOINT_PATH = 'edgeconnect/checkpoints/places2/InpaintingModel_gen.pth'
 
 
 class SegModel:
 	def __init__(self, device):
 		self.device = device
 
-		self.model = models.segmentation.deeplabv3_resnet50(pretrained=True)
+		# torch/hub.py line 127 and 423 had been modified due to ssl error.
+		# please check: https://gentlesark.tistory.com/57
+		self.model = torch.hub.load('pytorch/vision', 'fcn_resnet101', pretrained=True)
 		self.model = self.model.eval()
 		self.model = self.model.to(device)
 
