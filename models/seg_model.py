@@ -1,3 +1,4 @@
+import cv2
 import torch
 import numpy as np
 from torchvision import models
@@ -41,18 +42,12 @@ class SegModel:
 		mask = torch.argmax(masks.squeeze(), dim=0).detach().cpu().numpy()
 		mask = mask == 15
 
-		# some weird error
-		mask = mask.astype(np.uint8)
-
 		# pad masked area
-		mask = np.pad(mask, ((self.pad, self.pad), (self.pad, self.pad)), 'constant', constant_values=0)
-		mask_right = np.roll(mask, self.pad, axis=1)
-		mask_left = np.roll(mask, -self.pad, axis=1)
-		mask_up = np.roll(mask, self.pad, axis=0)
-		mask_down = np.roll(mask, -self.pad, axis=0)
+		kernel = np.ones((1+2*self.pad, 1+2*self.pad))
+		mask = cv2.filter2D(mask.astype(np.float32), -1, kernel)
+		mask = mask >= 1
 
-		mask = np.logical_or.reduce((mask, mask_up, mask_down, mask_left, mask_right))
-		mask = mask[self.pad:-self.pad, self.pad:-self.pad]
+		# some weird error
 		mask = mask.astype(np.uint8)
 
 		return mask

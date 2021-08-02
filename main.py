@@ -61,14 +61,23 @@ def boundaries(mask):
 	mask_up = np.roll(mask, pad, axis=0)
 	mask_down = np.roll(mask, -pad, axis=0)
 
-	outer = np.logical_or.reduce(((mask_right-mask).astype(bool), (mask_left-mask).astype(bool), (mask_up-mask).astype(bool), (mask_down-mask).astype(bool))).astype(np.uint8)
-	inner = np.logical_or.reduce(((mask-mask_right).astype(bool), (mask-mask_left).astype(bool), (mask-mask_up).astype(bool), (mask-mask_down).astype(bool))).astype(np.uint8)
+	outer = np.logical_or.reduce((
+		((mask_right-mask) == 1).astype(bool), 
+		((mask_left-mask) == 1).astype(bool), 
+		((mask_up-mask) == 1).astype(bool), 
+		((mask_down-mask) == 1).astype(bool)
+		)).astype(np.uint8)
+	inner = np.logical_or.reduce((
+		((mask-mask_right) == 1).astype(bool), 
+		((mask-mask_left) == 1).astype(bool), 
+		((mask-mask_up) == 1).astype(bool), 
+		((mask-mask_down) == 1).astype(bool)
+		)).astype(np.uint8)
 
 	outer = outer[pad:-pad, pad:-pad, :]
 	inner = inner[pad:-pad, pad:-pad, :]
 
 	return outer, inner
-
 
 
 def main():
@@ -82,7 +91,7 @@ def main():
 	height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 	# model defination
-	segModel = SegModel(device=DEVICE)
+	segModel = SegModel(device=DEVICE, pad=PAD)
 	inpaintModel = InpaintModel(device=DEVICE,
 								edge_checkpoint=MODEL_EDGE_CHECKPOINT_PATH,
 								inpaint_checkpoint=MODEL_INPAINT_CHECKPOINT_PATH)
@@ -135,13 +144,20 @@ def main():
 			canvas[mask == 0] = img[mask == 0]
 
 			# secondly, paint background with memory if there's some relavant background memory
+			# canvas[(mask == 1) & memory.has_memory] = memory.inference((mask == 1) & memory.has_memory)
 			canvas[(mask == 1) & memory.has_memory] = memory.background[(mask == 1) & memory.has_memory]
 
 			# third, resize and crop inpainted image
 			canvas[(mask == 1) & (~memory.has_memory)] = img_generated[(mask == 1) & (~memory.has_memory)]
+			# canvas[mask == 1] = img_generated[mask == 1]
 
 			# balance alpha
 			# outer, inner = boundaries(mask)
+			# alpha = np.mean(canvas[outer == 1]) / np.mean(canvas[inner == 1])
+			# print(alpha)
+			# canvas_bal = cv2.convertScaleAbs(canvas, alpha=alpha)
+			# canvas[mask == 1] = canvas_bal[mask == 1]
+			# conv = cv2.filter2D(src=img, ddepth=-1, kernel=memory.background)
 
 			# measure end time and calculate fps
 			end = time.time()
