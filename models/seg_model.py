@@ -45,12 +45,14 @@ class SegModel:
 		mask = mask.astype(np.uint8)
 
 		# pad masked area
+		mask = np.pad(mask, ((self.pad, self.pad), (self.pad, self.pad)), 'constant', constant_values=0)
 		mask_right = np.roll(mask, self.pad, axis=1)
 		mask_left = np.roll(mask, -self.pad, axis=1)
 		mask_up = np.roll(mask, self.pad, axis=0)
 		mask_down = np.roll(mask, -self.pad, axis=0)
 
 		mask = np.logical_or.reduce((mask, mask_up, mask_down, mask_left, mask_right))
+		mask = mask[self.pad:-self.pad, self.pad:-self.pad]
 		mask = mask.astype(np.uint8)
 
 		return mask
