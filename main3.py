@@ -88,7 +88,6 @@ class InpaintModel:
 		self.inpaint_model = self.inpaint_model.eval()
 		self.inpaint_model = self.inpaint_model.to(device)
 
-
 	@staticmethod
 	def preprocess(img, grayscale=False):
 		if grayscale:
@@ -105,11 +104,6 @@ class InpaintModel:
 		img = t(img)
 		img = img.float()
 		img = img.unsqueeze(0)
-		return img
-
-	@staticmethod
-	def postprocess(img):
-		img = img
 		return img
 
 	def predict(self, img, mask):
