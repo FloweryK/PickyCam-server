@@ -119,13 +119,14 @@ def main():
 			canvas[memory.has_memory & (mask == 1)] = memory.background[memory.has_memory & (mask == 1)]
 
 			# third, resize and crop inpainted image
-			canvas[(~memory.has_memory) & mask == 1] = img_generated[(~memory.has_memory) & mask == 1]
+			canvas[(~memory.has_memory) & (mask == 1)] = img_generated[(~memory.has_memory) & (mask == 1)]
 
 			# measure end time and calculate fps
 			end = time.time()
 			processtime = end - start
 			fps = 1 / processtime
 			fps_text = f'fps: {fps:.4f} (time: {processtime*1000:.2f}ms)'
+			print(fps_text)
 
 			# show final webcam live video
 			result = np.hstack((img, canvas))

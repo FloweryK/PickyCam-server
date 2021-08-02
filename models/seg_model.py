@@ -5,8 +5,9 @@ from torchvision import transforms as T
 
 
 class SegModel:
-	def __init__(self, device):
+	def __init__(self, device, pad=7):
 		self.device = device
+		self.pad = pad
 
 		# torch/hub.py line 127 and 423 had been modified due to ssl error.
 		# please check: https://gentlesark.tistory.com/57
@@ -43,12 +44,11 @@ class SegModel:
 		# some weird error
 		mask = mask.astype(np.uint8)
 
-		# padd masked area
-		pad = 7
-		mask_right = np.roll(mask, pad, axis=1)
-		mask_left = np.roll(mask, -pad, axis=1)
-		mask_up = np.roll(mask, pad, axis=0)
-		mask_down = np.roll(mask, -pad, axis=0)
+		# pad masked area
+		mask_right = np.roll(mask, self.pad, axis=1)
+		mask_left = np.roll(mask, -self.pad, axis=1)
+		mask_up = np.roll(mask, self.pad, axis=0)
+		mask_down = np.roll(mask, -self.pad, axis=0)
 
 		mask = np.logical_or.reduce((mask, mask_up, mask_down, mask_left, mask_right))
 		mask = mask.astype(np.uint8)
