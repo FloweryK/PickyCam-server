@@ -1,32 +1,11 @@
-import platform
+import os
 import time
-import datetime
 import cv2
 import torch
 import numpy as np
 from models.seg_model import SegModel
 from models.inpaint_model import InpaintModel
 from config import *
-
-class Recoder:
-	def __init__(self, framerate, width, height):
-		# codec type
-		if platform.system() == 'Darwin':
-			codec = 'MJPG'
-		elif platform.system() == 'Windows':
-			codec = 'DIVX'
-		else:
-			raise TypeError('invalid platform system')
-		fourcc = cv2.VideoWriter_fourcc(*codec)
-
-		# filename
-		filename = datetime.datetime.now().strftime('%Y%m%d_%H-%M-%S') + '.avi'
-
-		# define videowriter
-		self.out = cv2.VideoWriter(filename, fourcc, framerate, (width, height))
-
-	def write(self, frame):
-		self.out.write(frame)
 
 
 class Memory:
