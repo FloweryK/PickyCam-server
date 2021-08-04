@@ -6,6 +6,7 @@ import numpy as np
 from models.seg_model import SegModel
 from models.inpaint_model import InpaintModel
 from config import *
+from recoder import Recoder
 
 
 class Memory:
