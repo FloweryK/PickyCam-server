@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 from PIL import Image
@@ -5,8 +6,12 @@ from torchvision import models
 from torchvision import transforms as T
 from skimage.color import rgb2gray
 from skimage.feature import canny
-from edgeconnect.src.networks import EdgeGenerator, InpaintGenerator
 
+# check if there's edgeconnect
+if os.path.exists('../edgeconnect'):
+	import setup
+	setup.main()
+from edgeconnect.src.networks import EdgeGenerator, InpaintGenerator
 
 class InpaintModel:
 	def __init__(self, device, edge_checkpoint, inpaint_checkpoint):
