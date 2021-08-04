@@ -8,7 +8,7 @@ from skimage.color import rgb2gray
 from skimage.feature import canny
 
 # check if there's edgeconnect
-if os.path.exists('../edgeconnect'):
+if not os.path.exists('../edgeconnect'):
 	import setup
 	setup.main()
 from edgeconnect.src.networks import EdgeGenerator, InpaintGenerator
