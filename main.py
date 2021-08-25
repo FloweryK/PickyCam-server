@@ -33,33 +33,6 @@ class Memory:
 		self.background[is_changed & is_background] = img[is_changed & is_background]
 
 
-def boundaries(mask):
-	pad = 1
-	mask = np.pad(mask, ((pad, pad), (pad, pad), (0, 0)), 'constant', constant_values=0)
-	mask_right = np.roll(mask, pad, axis=1)
-	mask_left = np.roll(mask, -pad, axis=1)
-	mask_up = np.roll(mask, pad, axis=0)
-	mask_down = np.roll(mask, -pad, axis=0)
-
-	outer = np.logical_or.reduce((
-		((mask_right-mask) == 1).astype(bool), 
-		((mask_left-mask) == 1).astype(bool), 
-		((mask_up-mask) == 1).astype(bool), 
-		((mask_down-mask) == 1).astype(bool)
-		)).astype(np.uint8)
-	inner = np.logical_or.reduce((
-		((mask-mask_right) == 1).astype(bool), 
-		((mask-mask_left) == 1).astype(bool), 
-		((mask-mask_up) == 1).astype(bool), 
-		((mask-mask_down) == 1).astype(bool)
-		)).astype(np.uint8)
-
-	outer = outer[pad:-pad, pad:-pad, :]
-	inner = inner[pad:-pad, pad:-pad, :]
-
-	return outer, inner
-
-
 def main():
 	# capture webcam
 	# if using webcam, the argument in VideoCapture represent the index of video device.
@@ -80,8 +53,8 @@ def main():
 	memory = Memory(height, width)
 
 	# video recoder
-	recoder = Recoder(framerate=FRAME_RATE,
-					  width=2*width, height=height)
+	# recoder = Recoder(framerate=FRAME_RATE,
+	# 				  width=2*width, height=height)
 
 	# final result canvas
 	canvas = np.zeros((height, width, 3), dtype=np.uint8)
@@ -124,20 +97,11 @@ def main():
 			canvas[mask == 0] = img[mask == 0]
 
 			# secondly, paint background with memory if there's some relavant background memory
-			# canvas[(mask == 1) & memory.has_memory] = memory.inference((mask == 1) & memory.has_memory)
-			canvas[(mask == 1) & memory.has_memory] = memory.background[(mask == 1) & memory.has_memory]
+			# canvas[(mask == 1) & memory.has_memory] = memory.background[(mask == 1) & memory.has_memory]
 
 			# third, resize and crop inpainted image
-			canvas[(mask == 1) & (~memory.has_memory)] = img_generated[(mask == 1) & (~memory.has_memory)]
-			# canvas[mask == 1] = img_generated[mask == 1]
-
-			# balance alpha
-			# outer, inner = boundaries(mask)
-			# alpha = np.mean(canvas[outer == 1]) / np.mean(canvas[inner == 1])
-			# print(alpha)
-			# canvas_bal = cv2.convertScaleAbs(canvas, alpha=alpha)
-			# canvas[mask == 1] = canvas_bal[mask == 1]
-			# conv = cv2.filter2D(src=img, ddepth=-1, kernel=memory.background)
+			# canvas[(mask == 1) & (~memory.has_memory)] = img_generated[(mask == 1) & (~memory.has_memory)]
+			canvas[mask == 1] = img_generated[mask == 1]
 
 			# measure end time and calculate fps
 			end = time.time()
@@ -149,7 +113,7 @@ def main():
 			# show final webcam live video
 			result = np.hstack((img, canvas))
 			result = cv2.putText(result, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-			recoder.write(result)
+			# recoder.write(result)
 
 			cv2.imshow('result', result)
 			if cv2.waitKey(1) & 0xFF == ord('q'):
