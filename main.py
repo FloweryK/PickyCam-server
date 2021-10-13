@@ -9,28 +9,18 @@ from config import *
 from recoder import Recoder
 
 
-class Memory:
-	def __init__(self, height, width, th=10):
-		self.height = height
-		self.width = width
-		self.th = th
+def resize_without_distortion(img, width):
+	h, w = img.shape[:2]
+	height = int((h/w) * width)
+	return cv2.resize(img, (width, height), interpolation=cv2.INTER_AREA)
 
-		self.has_memory = np.zeros((height, width, 3), dtype=bool)
-		self.background = np.zeros((height, width, 3), dtype=np.uint8)
 
-	def update(self, img, mask):
-		# resize the mask into original image size
-		mask = cv2.resize(mask, (self.width, self.height), interpolation=cv2.INTER_LINEAR)
-		mask = (mask > 0).astype(bool)
-		mask = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
-
-		# check whether there's new background to memorize
-		is_changed = (np.abs(self.background - img) > self.th)
-		is_background = np.invert(mask)
-
-		# memorize relevant area
-		self.has_memory = np.logical_or(self.has_memory, is_changed & is_background)
-		self.background[is_changed & is_background] = img[is_changed & is_background]
+def putText_with_newline(img, text, pos):
+	for i, line in enumerate(text.split('\n')):
+		x = pos[0]
+		y = pos[1] + i * 40
+		img = cv2.putText(img, line, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+	return img
 
 
 def main():
@@ -43,18 +33,17 @@ def main():
 	width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 	height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-	# model defination
+	# model definition
 	segModel = SegModel(device=DEVICE, pad=PAD)
 	inpaintModel = InpaintModel(device=DEVICE,
 								edge_checkpoint=MODEL_EDGE_CHECKPOINT_PATH,
 								inpaint_checkpoint=MODEL_INPAINT_CHECKPOINT_PATH)
 
-	# background memorizatoin preparing
-	memory = Memory(height, width)
-
 	# video recoder
-	# recoder = Recoder(framerate=FRAME_RATE,
-	# 				  width=2*width, height=height)
+	if IS_RECORDING:
+		recoder = Recoder(framerate=FRAME_RATE, 
+						  width=2*width, 
+						  height=height)
 
 	# final result canvas
 	canvas = np.zeros((height, width, 3), dtype=np.uint8)
@@ -66,26 +55,20 @@ def main():
 
 		if success:
 			# measure fps
-			start = time.time()
+			t_start = time.time()
 
 			# resize image and convert into RGB
-			img_resized = cv2.resize(img, (RESIZE, RESIZE), interpolation=cv2.INTER_AREA)
+			img_resized = resize_without_distortion(img, RESIZE_WIDTH)
 			img_resized = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
+			t_resizing = time.time()
 
 			# predict human mask with segmentation model
 			mask = segModel.predict(img_resized)
-
-			# update background memory
-			memory.update(img, mask)
+			t_seg = time.time()
 
 			# generate paint
 			img_generated = inpaintModel.predict(img_resized, mask)
-
-			# the result is in C*H*W, so convert it into H*W*C
-			img_generated = np.moveaxis(img_generated, 0, -1)
-			img_generated[:, :, [0, 2]] = img_generated[:, :, [2, 0]]
-			img_generated = cv2.resize(img_generated, (width, height), interpolation=cv2.INTER_LINEAR)
-			img_generated = cv2.convertScaleAbs(img_generated, alpha=(255.0))
+			t_inpaint = time.time()
 
 			# now merge all results
 			# resize mask into original size
@@ -93,28 +76,36 @@ def main():
 			mask = (mask > 0).astype(bool).astype(np.uint8)
 			mask = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
 
+			# resize inpainted image
+			img_generated = cv2.resize(img_generated, (width, height), interpolation=cv2.INTER_LINEAR)
+
 			# firstly, make masked image of original frame
 			canvas[mask == 0] = img[mask == 0]
 
-			# secondly, paint background with memory if there's some relavant background memory
-			# canvas[(mask == 1) & memory.has_memory] = memory.background[(mask == 1) & memory.has_memory]
-
-			# third, resize and crop inpainted image
-			# canvas[(mask == 1) & (~memory.has_memory)] = img_generated[(mask == 1) & (~memory.has_memory)]
+			# secondly, resize and crop inpainted image
 			canvas[mask == 1] = img_generated[mask == 1]
 
 			# measure end time and calculate fps
-			end = time.time()
-			processtime = end - start
+			t_end = time.time()
+			processtime = t_end - t_start
 			fps = 1 / processtime
-			fps_text = f'fps: {fps:.4f} (time: {processtime*1000:.2f}ms)'
+			fps_text = f'fps: {fps:.4f} (time: {processtime*1000:.2f}ms)'	
+			fps_text += f'\nresizing: {(t_resizing - t_start)*1000:.2f}ms'	# mostly ~3ms
+			fps_text += f'\nsegmenting: {(t_seg - t_resizing)*1000:.2f}ms'	# mostly ~800ms
+			fps_text += f'\ninpainting: {(t_inpaint - t_seg)*1000:.2f}ms'	# mostly ~1800ms
+			fps_text += f'\nending: {(t_end - t_inpaint)*1000:.2f}ms'		# mostly ~24ms
 			print(fps_text)
 
 			# show final webcam live video
-			result = np.hstack((img, canvas))
-			result = cv2.putText(result, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-			# recoder.write(result)
+			result = np.vstack((img, canvas))
+			result = putText_with_newline(result, fps_text, (10, 30))
+			# result = cv2.putText(result, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+			
+			# record the frame
+			if IS_RECORDING:
+				recoder.write(result)
 
+			# show image
 			cv2.imshow('result', result)
 			if cv2.waitKey(1) & 0xFF == ord('q'):
 				break
