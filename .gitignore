@@ -4,5 +4,6 @@
 **/.idea
 venv/
 yolact/
+**/**.png
 
 edgeconnect/
