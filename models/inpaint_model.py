@@ -1,4 +1,5 @@
 import os
+import cv2
 import torch
 import numpy as np
 from PIL import Image
@@ -8,7 +9,7 @@ from skimage.color import rgb2gray
 from skimage.feature import canny
 
 # check if there's edgeconnect
-if not os.path.exists('../edgeconnect'):
+if not (os.path.exists('../edgeconnect') or os.path.exists('edgeconnect')):
 	import setup
 	setup.main()
 from edgeconnect.src.networks import EdgeGenerator, InpaintGenerator
@@ -72,5 +73,14 @@ class InpaintModel:
 
 		# postprocess
 		paint_generated = paint_generated.detach().cpu().numpy()[0]
+
+		# the result is in C*H*W, so convert it into H*W*C
+		paint_generated = np.moveaxis(paint_generated, 0, -1)
+
+		# tune scale abs
+		paint_generated = cv2.convertScaleAbs(paint_generated, alpha=(255.0))
+
+		# the result is in RGB, so convert it into BGR
+		paint_generated = cv2.cvtColor(paint_generated, cv2.COLOR_RGB2BGR)
 
 		return paint_generated
