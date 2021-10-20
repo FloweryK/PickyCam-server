@@ -147,12 +147,13 @@ def main():
 
 			# now merge all results
 			# resize mask into original size
-			mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_LINEAR)
+			mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
 			mask = (mask > 0).astype(bool).astype(np.uint8)
 			mask = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
 
 			# resize inpainted image
-			img_generated = cv2.resize(img_generated, (width, height), interpolation=cv2.INTER_LINEAR)
+			img_generated = cv2.resize(img_generated, (width, height), interpolation=cv2.INTER_NEAREST)
+			img_generated = cv2.medianBlur(img_generated, 3) # not good!
 
 			# firstly, make masked image of original frame
 			canvas[mask == 0] = img[mask == 0]
@@ -178,7 +179,6 @@ def main():
 				xmax = face['xmax'] - 150
 				ymin = face['ymin'] + 100
 				img = cv2.putText(img, f'{name}:{distance:.2f}', (xmax, ymin), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-
 
 			timer.check('writing info')
 
