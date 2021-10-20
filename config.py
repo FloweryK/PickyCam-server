@@ -1,8 +1,9 @@
 IS_RECORDING = False
-FRAME_RATE = 0.2
+FRAME_RATE = 0.9
 DEVICE = 'cpu'
-PAD = 10
+PAD = 5
 RESIZE_WIDTH = 128
 TARGET_CLASS = 15
+MAX_DISTANCE = 0.4
 MODEL_EDGE_CHECKPOINT_PATH = 'checkpoints/places2/EdgeModel_gen.pth'
 MODEL_INPAINT_CHECKPOINT_PATH = 'checkpoints/places2/InpaintingModel_gen.pth'
