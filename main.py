@@ -6,7 +6,7 @@ import cv2
 import torch
 import numpy as np
 from custom_models.seg_model import SegModel
-from custom_models.inpaint_model import InpaintModel
+from custom_models.inpaint_model import EdgeConnectModel
 from custom_models.human_detection import HumanDetectionModel
 from custom_models.face_detection import FaceDetectionModel
 from config import *
@@ -73,7 +73,7 @@ def main():
 	humanDetectionModel = HumanDetectionModel()
 	faceDetectionModel = FaceDetectionModel()
 	segModel = SegModel(device=DEVICE, pad=PAD)
-	inpaintModel = InpaintModel(device=DEVICE,
+	inpaintModel = EdgeConnectModel(device=DEVICE,
 								edge_checkpoint=MODEL_EDGE_CHECKPOINT_PATH,
 								inpaint_checkpoint=MODEL_INPAINT_CHECKPOINT_PATH)
 
