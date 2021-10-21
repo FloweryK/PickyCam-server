@@ -9,6 +9,8 @@ class FaceDetectionModel:
 		self.known_faces = {}
 
 		for image_name in os.listdir('known_faces'):
+			if image_name[-4:] != '.png':
+				continue
 			image = cv2.imread(f'known_faces/{image_name}')
 
 			# convert from BGR to RGB
