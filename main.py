@@ -1,7 +1,5 @@
 import os
-import platform
 import math
-import time
 import cv2
 import torch
 import numpy as np
@@ -9,40 +7,9 @@ from model.segmentation import SegModel
 from model.inpainting import EdgeConnectModel
 from model.human_detection import HumanDetectionModel
 from model.face_detection import FaceDetectionModel
-from config import *
+from timer import Timer
 from recoder import Recoder
-
-
-class Timer:
-    def __init__(self):
-        self.time = []
-        self.name = []
-
-    def initialize(self):
-        self.time = [time.time()]
-        self.name = ['start']
-
-    def check(self, name):
-        self.time.append(time.time())
-        self.name.append(name)
-
-    def get_result_as_text(self):
-        total_time = self.time[-1] - self.time[0]
-
-        # fps
-        result = f'system: {platform.system()} / {platform.processor()}'
-        result += f'\nfps: {1/total_time:.3f} (time: {total_time*1000:.2f}ms)'
-
-        # remaining times
-        for i in range(1, len(self.time)):
-            time_now = self.time[i]
-            time_prev = self.time[i - 1]
-            interval = (time_now - time_prev) * 1000  # in ms
-            name = self.name[i]
-
-            result += f'\n{name}: {interval:.1f}ms'
-
-        return result
+from config import *
 
 
 def resize_without_distortion(img, width):
@@ -180,15 +147,7 @@ def main():
                 name = face['name'] if distance < MAX_DISTANCE else 'unknown'
                 xmax = face['xmax'] - 150
                 ymin = face['ymin'] + 100
-                img = cv2.putText(
-                    img,
-                    f'{name}:{distance:.2f}',
-                    (xmax, ymin),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1,
-                    (0, 0, 0),
-                    2,
-                )
+                img = cv2.putText(img, f'{name}:{distance:.2f}', (xmax, ymin), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, )
 
             timer.check('writing info')
 
