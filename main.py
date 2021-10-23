@@ -73,7 +73,7 @@ def main():
 
             # predict human mask with segmentation model
             mask = segModel.predict(img_resized)
-            timer.check('human masking')
+            timer.check('human segmentation')
 
             # human detection
             detected_humans = humanDetectionModel.predict(img)
@@ -108,7 +108,7 @@ def main():
                     ymax = math.ceil(ymax * shrink_rate) + PAD
 
                     mask[ymin:ymax, xmin:xmax] = 0
-            timer.check('known face detecting')
+            timer.check('known face detection')
 
             # generate paint
             img_generated = inpaintModel.predict(img_resized, mask)
