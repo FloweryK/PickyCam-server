@@ -3,19 +3,19 @@ import math
 import cv2
 import torch
 import numpy as np
+import face_recognition
+from model.human_detection import HumanDetectionModel
 from model.segmentation import SegModel
 from model.inpainting import EdgeConnectModel
-from model.human_detection import HumanDetectionModel
-from model.face_detection import FaceDetectionModel
 from timer import Timer
 from recoder import Recoder
 from config import *
 
 
-def resize_without_distortion(img, width):
+def resize(img, width, interp=cv2.INTER_AREA):
     h, w = img.shape[:2]
     height = int((h / w) * width)
-    return cv2.resize(img, (width, height), interpolation=cv2.INTER_AREA)
+    return cv2.resize(img, (width, height), interpolation=interp)
 
 
 def putText_with_newline(img, text, pos):
@@ -27,142 +27,108 @@ def putText_with_newline(img, text, pos):
 
 
 def main():
-    # capture webcam
-    # if using webcam, the argument in VideoCapture represent the index of video device.
-    # if using video file, just replace the argument as file path.
-    cap = cv2.VideoCapture(0)
-
-    # get cap width and height
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    # model definition
-    humanDetectionModel = HumanDetectionModel()
-    faceDetectionModel = FaceDetectionModel()
-    segModel = SegModel(device=DEVICE, pad=PAD)
-    inpaintModel = EdgeConnectModel(
-        device=DEVICE,
-        edge_checkpoint=MODEL_EDGE_CHECKPOINT_PATH,
-        inpaint_checkpoint=MODEL_INPAINT_CHECKPOINT_PATH,
-    )
-
-    # video recoder
-    if IS_RECORDING:
-        recoder = Recoder(framerate=FRAME_RATE, width=width, height=2 * height)
-
     # timer
     timer = Timer()
 
-    # final result canvas
-    canvas = np.zeros((height, width, 3), dtype=np.uint8)
+    # recoder
+    if IS_RECORDING:
+        recoder = Recoder(framerate=frame_RATE, width=width, height=2 * height)
 
-    # run on webcam
+    known_faces = []
+    for img_name in os.listdir('faces'):
+        if img_name[-4:] != '.png':
+            continue
+        img = cv2.imread(f'faces/{img_name}')
+        img = img[:, :, ::-1]
+        face_locations = face_recognition.face_locations(img)
+        face_encodings = face_recognition.face_encodings(img, face_locations)
+
+        for face_encoding in face_encodings:
+            known_faces.append(face_encoding)
+
+    humanDetectionModel = HumanDetectionModel()
+    segModel = SegModel(DEVICE, PAD)
+    inpaintModel = EdgeConnectModel(DEVICE, MODEL_EDGE_CHECKPOINT_PATH, MODEL_INPAINT_CHECKPOINT_PATH)
+
+    cap = cv2.VideoCapture(0)
+
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
     while cap.isOpened():
-        # cv2 format: np.array(H*W*C) with C as BGR
+        # cv2 is in BGR format
         success, img = cap.read()
-        h, w, c = img.shape
 
         if success:
-            # measure fps
             timer.initialize()
 
-            # resize image and convert into RGB
-            img_resized = resize_without_distortion(img, RESIZE_WIDTH)
-            img_resized = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
-            timer.check('resizing')
+            # convert from BGR to RGB
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-            # predict human mask with segmentation model
-            mask = segModel.predict(img_resized)
+            # human segmantation
+            mask_seg = segModel.predict(
+                img=resize(img, 128))
             timer.check('human segmentation')
 
-            # human detection
-            detected_humans = humanDetectionModel.predict(img)
+            humans = humanDetectionModel.predict(
+                img=resize(img, 256))
             timer.check('human detection')
 
-            # known face detecting
-            faces = []
-            for human in detected_humans:
-                xmin = math.floor(human['xmin'])
-                xmax = math.ceil(human['xmax'])
-                ymin = math.floor(human['ymin'])
-                ymax = math.ceil(human['ymax'])
-                img_human = img[ymin:ymax, xmin:xmax]
+            for human in humans:
+                r = width / 256
+                xmin = math.floor(r * human['xmin'])
+                ymin = math.floor(r * human['ymin'])
+                xmax = math.ceil(r * human['xmax'])
+                ymax = math.ceil(r * human['ymax'])
+                img_human_crop = img[ymin:ymax, xmin:xmax, :]
+                img_human_crop = resize(img_human_crop, 128)
 
-                face_match = faceDetectionModel.predict(img_human[:, :, ::-1])
-                faces.append(
-                    {
-                        'name': face_match['name'],
-                        'distance': face_match['distance'],
-                        'xmin': xmin,
-                        'xmax': xmax,
-                        'ymin': ymin,
-                        'ymax': ymax,
-                    }
-                )
+                face_locations = face_recognition.face_locations(img_human_crop)
+                face_encodings = face_recognition.face_encodings(img_human_crop, face_locations)
 
-                if face_match['distance'] < MAX_DISTANCE:
-                    shrink_rate = RESIZE_WIDTH / w
-                    xmin = max(0, math.floor(xmin * shrink_rate) - PAD)
-                    xmax = math.ceil(xmax * shrink_rate) + PAD
-                    ymin = max(0, math.floor(ymin * shrink_rate) - PAD)
-                    ymax = math.ceil(ymax * shrink_rate) + PAD
+                min_dist = 1
+                for face_encoding in face_encodings:
+                    dists = face_recognition.face_distance(known_faces, face_encoding)
+                    min_dist = min(min_dist, min(dists))
 
-                    mask[ymin:ymax, xmin:xmax] = 0
+                if min_dist < MAX_DISTANCE:
+                    r = 128 / 256
+                    xmin = math.floor(r * human['xmin'])
+                    ymin = math.floor(r * human['ymin'])
+                    xmax = math.ceil(r * human['xmax'])
+                    ymax = math.ceil(r * human['ymax'])
+                    mask_seg[ymin:ymax, xmin:xmax] = 0
             timer.check('known face detection')
 
-            # generate paint
-            img_generated = inpaintModel.predict(img_resized, mask)
+            # mask inpainting
+            img_gen = inpaintModel.predict(
+                img=resize(img, 128), 
+                mask=resize(mask_seg, 128))
             timer.check('inpainting')
 
-            # now merge all results
-            # resize mask into original size
-            mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
-            mask = (mask > 0).astype(bool).astype(np.uint8)
-            mask = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
+            # resize to original size
+            mask_seg = resize(mask_seg, width, interp=cv2.INTER_NEAREST)
+            mask_seg = np.repeat(mask_seg[:, :, np.newaxis], 3, axis=2)
+            mask_seg = (mask_seg > 0).astype(bool)
+            img_gen = resize(img_gen, width, interp=cv2.INTER_CUBIC)
 
-            # resize inpainted image
-            img_generated = cv2.resize(img_generated, (width, height), interpolation=cv2.INTER_CUBIC)
-            # img_generated = cv2.medianBlur(img_generated, 3)  # not good!
-
-            # firstly, make masked image of original frame
-            canvas[mask == 0] = img[mask == 0]
-
-            # secondly, resize and crop inpainted image
-            canvas[mask == 1] = img_generated[mask == 1]
-
-            # measure end time and calculate fps
+            # merge all results
+            img_result = img.copy()
+            img_result[mask_seg == 1] = img_gen[mask_seg == 1]
             timer.check('merging')
 
-            # add human detection info
-            for human in detected_humans:
-                xmin = int(human['xmin'])
-                xmax = int(human['xmax'])
-                ymin = int(human['ymin'])
-                ymax = int(human['ymax'])
-                img = cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 3)
+            # convert from RGB to BGR
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            img_result = cv2.cvtColor(img_result, cv2.COLOR_RGB2BGR)
 
-            # add face info
-            for face in faces:
-                distance = face['distance']
-                name = face['name'] if distance < MAX_DISTANCE else 'unknown'
-                xmax = face['xmax'] - 150
-                ymin = face['ymin'] + 100
-                img = cv2.putText(img, f'{name}:{distance:.2f}', (xmax, ymin), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, )
+            # put info on original img
+            img = putText_with_newline(img, timer.get_result_as_text(), (10, 30))
 
-            timer.check('writing info')
-
-            # show final webcam live video
-            result = np.vstack((img, canvas))
-            result = putText_with_newline(result, timer.get_result_as_text(), (10, 30))
-
-            # record the frame
-            if IS_RECORDING:
-                recoder.write(result)
-
-            # show image
-            cv2.imshow('result', result)
+            # show result
+            cv2.imshow('result', np.vstack((img, img_result)))
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+
 
 
 if __name__ == '__main__':

@@ -77,7 +77,7 @@ class EdgeConnectModel:
 		paint_generated = cv2.convertScaleAbs(paint_generated, alpha=(255.0))
 
 		# the result is in RGB, so convert it into BGR
-		paint_generated = cv2.cvtColor(paint_generated, cv2.COLOR_RGB2BGR)
+		# paint_generated = cv2.cvtColor(paint_generated, cv2.COLOR_RGB2BGR)
 
 		return paint_generated
 
