@@ -26,6 +26,14 @@ def putText_with_newline(img, text, pos):
     return img
 
 
+def pad(mask, pad=3):
+    # pad masked area
+    kernel = np.ones((1+2*pad, 1+2*pad))
+    mask = cv2.filter2D(mask.astype(np.float32), -1, kernel)
+    mask = mask >= 1
+    return mask
+
+
 def main():
     # timer
     timer = Timer()
@@ -47,7 +55,7 @@ def main():
             known_faces.append(face_encoding)
 
     humanDetectionModel = HumanDetectionModel()
-    segModel = SegModel(DEVICE, PAD)
+    segModel = SegModel(DEVICE)
     inpaintModel = EdgeConnectModel(DEVICE, MODEL_EDGE_CHECKPOINT_PATH, MODEL_INPAINT_CHECKPOINT_PATH)
 
     cap = cv2.VideoCapture(0)
@@ -99,6 +107,9 @@ def main():
                     ymax = math.ceil(r * human['ymax'])
                     mask_seg[ymin:ymax, xmin:xmax] = 0
             timer.check('known face detection')
+
+            mask_seg = pad(mask_seg, 5)
+            mask_seg = mask_seg.astype(np.uint8)
 
             # mask inpainting
             img_gen = inpaintModel.predict(
