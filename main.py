@@ -25,6 +25,10 @@ def pad(mask, pad=3):
 def main():
     # settings
     DEVICE = "cuda"
+    RESIZE_ORG = (1080, 1920)
+    RESIZE_SEG = (108, 192)
+    RESIZE_INP = (108, 192)
+    PAD = 2
 
     # timer
     timer = Timer()
@@ -32,7 +36,7 @@ def main():
     model_seg = SegModel(DEVICE)
     model_inpaint = InpaintModel(DEVICE)
 
-    cap = cv2.VideoCapture("testvideo.mp4")
+    cap = cv2.VideoCapture("testvideo2.mp4")
 
     while cap.isOpened():
         # cv2 is in BGR format
@@ -42,20 +46,22 @@ def main():
             timer.initialize()
 
             # convert from BGR to RGB
-            img = cv2.resize(img, (1280, 720), interpolation=cv2.INTER_AREA)
+            img = cv2.resize(img, RESIZE_ORG, interpolation=cv2.INTER_AREA)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
             # human segmantation
-            img_seg = cv2.resize(img, (128, 72), interpolation=cv2.INTER_AREA)
+            img_seg = cv2.resize(img, RESIZE_SEG, interpolation=cv2.INTER_AREA)
             mask_seg = model_seg(img_seg)
             mask_seg = mask_seg.detach().cpu().numpy()
-            mask_seg = pad(mask_seg, 5)
+            mask_seg = pad(mask_seg, PAD)
             mask_seg = mask_seg.astype(np.uint8)
             timer.check("human segmentation")
 
             # mask inpainting
-            img_inpaint = cv2.resize(img, (128, 72), interpolation=cv2.INTER_AREA)
-            mask_inpaint = cv2.resize(mask_seg, (128, 72), interpolation=cv2.INTER_AREA)
+            img_inpaint = cv2.resize(img, RESIZE_INP, interpolation=cv2.INTER_AREA)
+            mask_inpaint = cv2.resize(
+                mask_seg, RESIZE_INP, interpolation=cv2.INTER_AREA
+            )
             img_gen = model_inpaint(img_inpaint, mask_inpaint)
             img_gen = torch.moveaxis(img_gen, 0, -1)
             img_gen = img_gen.detach().cpu().numpy()
@@ -63,10 +69,8 @@ def main():
             timer.check("inpainting")
 
             # resize to original size
-            mask_seg = cv2.resize(
-                mask_seg, (1280, 720), interpolation=cv2.INTER_NEAREST
-            )
-            img_gen = cv2.resize(img_gen, (1280, 720), interpolation=cv2.INTER_CUBIC)
+            mask_seg = cv2.resize(mask_seg, RESIZE_ORG, interpolation=cv2.INTER_NEAREST)
+            img_gen = cv2.resize(img_gen, RESIZE_ORG, interpolation=cv2.INTER_CUBIC)
             timer.check("resizing")
 
             # merge all results
@@ -87,7 +91,7 @@ def main():
                     (0, 0, 0),
                     2,
                 )
-            result = cv2.resize(result, (640, 720), cv2.INTER_AREA)
+            result = cv2.resize(result, (270, 960), cv2.INTER_AREA)
 
             # show result
             cv2.imshow("result", result)
