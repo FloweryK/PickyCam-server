@@ -15,18 +15,21 @@ class SegModel:
         self.model = self.model.eval()
         self.model = self.model.to(device)
 
-        self.t = T.Compose(
+    def t(self, img):
+        t = T.Compose(
             [
                 T.ToTensor(),
                 T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                lambda x: x.unsqueeze(0),
             ]
         )
 
+        return t(img)
+
     def __call__(self, img):
         img = self.t(img)
-        img = img.unsqueeze(0)
         img = img.to(self.device)
-        
+
         masks = self.model(img)["out"]
         mask = torch.argmax(masks.squeeze(), dim=0)
         mask = mask == 15

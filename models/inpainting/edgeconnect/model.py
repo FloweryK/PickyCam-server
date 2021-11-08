@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import numpy as np
 from PIL import Image
 from torchvision import transforms as T
 from skimage.color import rgb2gray
@@ -31,25 +30,34 @@ class InpaintModel:
         self.inpaint_model = self.inpaint_model.eval()
         self.inpaint_model = self.inpaint_model.to(device)
 
-        self.t_gray = T.Compose([T.Grayscale(), T.ToTensor()])
-        self.t = T.Compose([T.ToTensor()])
+    def t(self, img, grayscale=False):
+        if grayscale:
+            t = T.Compose(
+                [
+                    Image.fromarray,
+                    T.Grayscale(),
+                    T.ToTensor(),
+                    lambda x: x.float(),
+                    lambda x: x.unsqueeze(0),
+                ]
+            )
+        else:
+            t = T.Compose(
+                [
+                    Image.fromarray,
+                    T.ToTensor(),
+                    lambda x: x.float(),
+                    lambda x: x.unsqueeze(0),
+                ]
+            )
+
+        return t(img)
 
     def __call__(self, img, mask):
-        img_gray = Image.fromarray(img)
-        img_gray = self.t_gray(img_gray)
-        img_gray = img_gray.float()
-        img_gray = img_gray.unsqueeze(0)
-
-        edge = canny(rgb2gray(img), sigma=1, mask=(1 - mask).astype(bool))
-        edge = Image.fromarray(edge)
-        edge = self.t(edge)
-        edge = edge.float()
-        edge = edge.unsqueeze(0)
-
-        mask = Image.fromarray(mask)
+        # edge generating
+        img_gray = self.t(img, grayscale=True)
+        edge = self.t(canny(rgb2gray(img), sigma=1, mask=(1 - mask).astype(bool)))
         mask = self.t(mask)
-        mask = mask.float()
-        mask = mask.unsqueeze(0)
 
         img_gray_masked = img_gray * (1 - mask.bool().int()) + mask * 255
         edge_masked = edge * (1 - mask.bool().int())
@@ -58,10 +66,8 @@ class InpaintModel:
         input_edge = input_edge.to(self.device)
         edge_gen = self.edge_model(input_edge)
 
-        img = Image.fromarray(img)
+        # inpainting
         img = self.t(img)
-        img = img.float()
-        img = img.unsqueeze(0)
 
         img_masked = img * (1 - mask.bool().int()) + mask * 255
         img_masked = img_masked.to(self.device)
