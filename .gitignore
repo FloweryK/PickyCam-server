@@ -3,6 +3,5 @@
 **/*.avi
 **/.idea
 venv/
-yolact/
 **/**.png
-
+**/**.pth
