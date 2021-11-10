@@ -1,5 +1,4 @@
 import cv2
-import torch
 import numpy as np
 from models.segmentation.yolact.model import SegModel
 from models.inpainting.edgeconnect.model import InpaintModel
@@ -39,7 +38,6 @@ def main():
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
             # human segmantation
-            # TODO: filter only human
             masks = model_seg(img)
             masks = masks.detach().cpu().numpy()
             timer.check("human segmentation")
