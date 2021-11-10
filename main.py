@@ -9,6 +9,7 @@ def pad(mask, pad=3):
     # pad masked area
     kernel = np.ones((1 + 2 * pad, 1 + 2 * pad))
     mask = cv2.filter2D(mask.astype(np.float32), -1, kernel)
+    mask = (mask >= 1).astype(np.float32)
     return mask
 
 
@@ -16,8 +17,8 @@ def main():
     # settings
     DEVICE = "cuda"
     RESIZE_ORG = (480, 1016)
-    RESIZE_INP = (216, 384)
-    PAD = 5
+    RESIZE_INP = (108, 192)
+    PAD = 10
 
     # timer
     timer = Timer()
@@ -77,22 +78,32 @@ def main():
             # resize to original size
             mask_unknown = cv2.resize(mask_unknown, RESIZE_ORG, interpolation=cv2.INTER_NEAREST)
             img_inpaint = cv2.resize(img_inpaint, RESIZE_ORG, interpolation=cv2.INTER_CUBIC)
-            timer.check("resizing")
 
-            # merge all results
+            # replace human into inpainted background
             img_erased = img.copy()
             img_erased[mask_unknown == True] = img_inpaint[mask_unknown == True]
-            result = np.vstack((img, img_erased))
-            result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+
+            # tetris display
+            img_with_mask = img.copy()
+            mask_color = np.zeros(img_with_mask.shape, img_with_mask.dtype)
+            mask_color[:, :] = (0, 255, 0)
+            mask_color = cv2.bitwise_and(mask_color, mask_color, mask=mask_unknown)
+            cv2.addWeighted(mask_color, 0.7, img_with_mask, 1, 0, img_with_mask)
+
+            display = np.vstack((
+                np.hstack((img, img_with_mask)), 
+                np.hstack((img_inpaint, img_erased))
+                ))
+            display = cv2.resize(display, (350, int(350 * display.shape[0]/display.shape[1])))
+            display = cv2.cvtColor(display, cv2.COLOR_RGB2BGR)
             timer.check("merging")
 
-            # write fps info and resize
+            # write fps info
             for i, line in enumerate(timer.get_result_as_text().split("\n")):
-                result = cv2.putText(result, line, (10, 30 + i * 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2,)
-            result = cv2.resize(result, (270, 960), cv2.INTER_AREA)
+                display = cv2.putText(display, line, (5, 15 + i * 23), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2,)
 
             # show result
-            cv2.imshow("result", result)
+            cv2.imshow("result", display)
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 

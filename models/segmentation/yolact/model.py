@@ -12,7 +12,7 @@ class Args:
         self.traditional_nms = False
         self.save_lincomb = False
         self.no_crop = False
-        self.visual_thre = 0.3
+        self.visual_thre = 0.15
 
         prefix = re.findall(r'best_\d+\.\d+_', self.weight)[0]
         suffix = re.findall(r'_\d+\.pth', self.weight)[0]
