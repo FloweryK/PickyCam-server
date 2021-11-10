@@ -21,8 +21,8 @@ class Args:
     
 
 class SegModel:
-    def __init__(self):
-        self.cfg = get_config(Args(), 'detect')
+    def __init__(self, device):
+        self.cfg = get_config(Args(), 'detect', device)
         self.net = Yolact(self.cfg)
         self.net.load_weights(self.cfg.weight, self.cfg.cuda)
         self.net.eval()

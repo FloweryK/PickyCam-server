@@ -219,8 +219,9 @@ class res50_custom(res101_coco):
             self.val_ann = ''
 
 
-def get_config(args, mode):
-    args.cuda = torch.cuda.is_available()
+def get_config(args, mode, device):
+    # args.cuda = torch.cuda.is_available()
+    args.cuda = (device == "cuda")
     args.mode = mode
 
     if args.cuda:

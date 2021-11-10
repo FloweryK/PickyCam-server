@@ -74,6 +74,7 @@ class InpaintModel:
         input_inpaint = torch.cat((img_masked, edge_gen), dim=1)
 
         img_gen = self.inpaint_model(input_inpaint)[0]
+        img_gen = torch.moveaxis(img_gen, 0, -1)
 
         return img_gen
 

@@ -23,7 +23,7 @@ def main():
     # timer
     timer = Timer()
 
-    model_seg = SegModel()
+    model_seg = SegModel(DEVICE)
     model_inpaint = InpaintModel(DEVICE)
 
     cap = cv2.VideoCapture("testvideo2.mp4")
@@ -69,9 +69,10 @@ def main():
             # inpainting
             img_inpaint = cv2.resize(img, RESIZE_INP, interpolation=cv2.INTER_AREA)
             mask_inpaint = cv2.resize(mask_unknown, RESIZE_INP, interpolation=cv2.INTER_AREA)
+
             img_inpaint = model_inpaint(img_inpaint, mask_inpaint)
-            img_inpaint = torch.moveaxis(img_inpaint, 0, -1)
             img_inpaint = img_inpaint.detach().cpu().numpy()
+
             img_inpaint = cv2.convertScaleAbs(img_inpaint, alpha=(255.0))
             timer.check("inpainting")
 
@@ -84,19 +85,12 @@ def main():
             img_erased = img.copy()
             img_erased[mask_unknown == True] = img_inpaint[mask_unknown == True]
             result = np.vstack((img, img_erased))
+            result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
             timer.check("merging")
 
             # write fps info and resize
             for i, line in enumerate(timer.get_result_as_text().split("\n")):
-                result = cv2.putText(
-                    result,
-                    line,
-                    (10, 30 + i * 40),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1,
-                    (0, 0, 0),
-                    2,
-                )
+                result = cv2.putText(result, line, (10, 30 + i * 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2,)
             result = cv2.resize(result, (270, 960), cv2.INTER_AREA)
 
             # show result
