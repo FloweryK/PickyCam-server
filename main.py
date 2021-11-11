@@ -20,7 +20,7 @@ def main():
     RESIZE_ORG = (480, 1016)
     RESIZE_INP = (108, 192)
     RESIZE_SPR = (120, 254)
-    PAD = 15
+    PAD = 10
 
     # timer
     timer = Timer()
@@ -66,6 +66,14 @@ def main():
             mask_unknown -= mask_known * 100
             mask_unknown = (mask_unknown > 0)
             mask_unknown = mask_unknown.astype(np.uint8)
+
+            # fill holes inside each mask
+            contour, _ = cv2.findContours(mask_unknown, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+            for cnt in contour:
+                cv2.drawContours(mask_unknown, [cnt], 0, 255, -1)
+            mask_unknown = (mask_unknown > 0)
+            mask_unknown = mask_unknown.astype(np.uint8)
+
             timer.check("known face recognition")
 
             # inpainting
@@ -79,9 +87,9 @@ def main():
             timer.check("inpainting")
 
             # super resolution
-            img_supres = cv2.resize(img_inpaint, RESIZE_SPR, interpolation=cv2.INTER_CUBIC)
-            img_supres = model_supres(img_supres)
-            timer.check("super resolution")
+            # img_supres = cv2.resize(img_inpaint, RESIZE_SPR, interpolation=cv2.INTER_CUBIC)
+            # img_supres = model_supres(img_supres)
+            # timer.check("super resolution")
 
             # resize to original size
             mask_unknown = cv2.resize(mask_unknown, RESIZE_ORG, interpolation=cv2.INTER_NEAREST)
@@ -89,7 +97,7 @@ def main():
 
             # replace human into inpainted background
             img_erased = img.copy()
-            img_erased[mask_unknown == True] = img_supres[mask_unknown == True]
+            img_erased[mask_unknown == True] = img_inpaint[mask_unknown == True]
 
             # tetris display
             img_with_mask = img.copy()
