@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from models.segmentation.yolact.model import SegModel
 from models.inpainting.edgeconnect.model import InpaintModel
+from models.superresolution.espcn.model import SuperResModel
 from utils.timer import Timer
 
 
@@ -18,13 +19,15 @@ def main():
     DEVICE = "cuda"
     RESIZE_ORG = (480, 1016)
     RESIZE_INP = (108, 192)
-    PAD = 10
+    RESIZE_SPR = (120, 254)
+    PAD = 15
 
     # timer
     timer = Timer()
 
     model_seg = SegModel(DEVICE)
     model_inpaint = InpaintModel(DEVICE)
+    model_supres = SuperResModel()
 
     cap = cv2.VideoCapture("testvideo2.mp4")
 
@@ -75,13 +78,18 @@ def main():
             img_inpaint = cv2.convertScaleAbs(img_inpaint, alpha=(255.0))
             timer.check("inpainting")
 
+            # super resolution
+            img_supres = cv2.resize(img_inpaint, RESIZE_SPR, interpolation=cv2.INTER_CUBIC)
+            img_supres = model_supres(img_supres)
+            timer.check("super resolution")
+
             # resize to original size
             mask_unknown = cv2.resize(mask_unknown, RESIZE_ORG, interpolation=cv2.INTER_NEAREST)
             img_inpaint = cv2.resize(img_inpaint, RESIZE_ORG, interpolation=cv2.INTER_CUBIC)
 
             # replace human into inpainted background
             img_erased = img.copy()
-            img_erased[mask_unknown == True] = img_inpaint[mask_unknown == True]
+            img_erased[mask_unknown == True] = img_supres[mask_unknown == True]
 
             # tetris display
             img_with_mask = img.copy()
@@ -94,7 +102,7 @@ def main():
                 np.hstack((img, img_with_mask)), 
                 np.hstack((img_inpaint, img_erased))
                 ))
-            display = cv2.resize(display, (350, int(350 * display.shape[0]/display.shape[1])))
+            display = cv2.resize(display, (500, int(500 * display.shape[0]/display.shape[1])))
             display = cv2.cvtColor(display, cv2.COLOR_RGB2BGR)
             timer.check("merging")
 
