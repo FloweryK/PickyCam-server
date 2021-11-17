@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from models.segmentation.yolact.model import SegModel
 from models.inpainting.edgeconnect.model import InpaintModel
-from models.superresolution.espcn.model import SuperResModel
 from utils.timer import Timer
 
 
@@ -27,7 +26,6 @@ def main():
 
     model_seg = SegModel(DEVICE)
     model_inpaint = InpaintModel(DEVICE)
-    model_supres = SuperResModel()
 
     cap = cv2.VideoCapture("testvideo2.mp4")
 
@@ -76,7 +74,6 @@ def main():
                 cv2.drawContours(mask_unknown, [cnt], 0, 255, -1)
             mask_unknown = (mask_unknown > 0)
             mask_unknown = mask_unknown.astype(np.uint8)
-
             timer.check("known face recognition")
 
             # inpainting
@@ -88,11 +85,6 @@ def main():
 
             img_inpaint = cv2.convertScaleAbs(img_inpaint, alpha=(255.0))
             timer.check("inpainting")
-
-            # super resolution
-            # img_supres = cv2.resize(img_inpaint, RESIZE_SPR, interpolation=cv2.INTER_CUBIC)
-            # img_supres = model_supres(img_supres)
-            # timer.check("super resolution")
 
             # resize to original size
             mask_unknown = cv2.resize(mask_unknown, RESIZE_ORG, interpolation=cv2.INTER_NEAREST)
