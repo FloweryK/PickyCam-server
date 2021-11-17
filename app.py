@@ -6,10 +6,11 @@ import cv2
 import io
 import base64
 import time
+import ssl
 
 # server config
 HOST = 'localhost'
-PORT = 8000
+PORT = 4321
 
 # inference model
 model = Inferencer()
@@ -21,34 +22,28 @@ app = Flask(__name__)
 def home():
     return "hello world!"
 
-@app.route('/upload')
+@app.route('/upload', methods=["POST"])
 def upload():
-    # read file
-    a = time.time()
-    file = request.files['file'].read()
-
-    # convert into cv2 image
-    b = time.time()
-    img = np.fromstring(file, np.uint8)
+    # decode base64 image
+    img = request.json['data']
+    print('got data from client!: ', len(img))
+    img = base64.b64decode(img)
+    img = np.frombuffer(img, dtype=np.uint8)
     img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
     # inference
-    c = time.time()
     img = model.inference(img)
-
-    # convert into base64 and send as response
-    d = time.time()
     img = Image.fromarray(img.astype('uint8'))
+
+    # encode image to base64
     rawBytes = io.BytesIO()
     img.save(rawBytes, "JPEG")
     rawBytes.seek(0)
-    img_base64 = base64.b64encode(rawBytes.read())
+    img = base64.b64encode(rawBytes.read())
+    print('sent: ', len(img))
 
-    e = time.time()
-
-    print(f'{(b-a)*1000}, {(c-b)*1000}, {(d-c)*1000}, {(e-d)*1000}')
-
-    return jsonify({'image': str(img_base64)})
+    return jsonify({'image': str(img)})
 
 
 if __name__ == '__main__':
