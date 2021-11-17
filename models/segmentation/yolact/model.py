@@ -44,6 +44,7 @@ class SegModel:
         ids_p, class_p, boxes_p, masks_p = after_nms(ids_p, class_p, box_p, coef_p, proto_p, img_h, img_w, self.cfg)
 
         # remain human only
-        masks_p = masks_p[ids_p == 0]
+        if type(masks_p) != type(None):
+            masks_p = masks_p[ids_p == 0]
 
         return masks_p

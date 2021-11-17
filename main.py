@@ -20,7 +20,7 @@ def main():
     RESIZE_ORG = (480, 1016)
     RESIZE_INP = (108, 192)
     RESIZE_SPR = (120, 254)
-    PAD = 10
+    PAD = 15
 
     # timer
     timer = Timer()
@@ -43,7 +43,10 @@ def main():
 
             # human segmantation
             masks = model_seg(img)
-            masks = masks.detach().cpu().numpy()
+            if type(masks) != type(None): # TODO: code cleaning
+                masks = masks.detach().cpu().numpy()
+            else:
+                masks = []
             timer.check("human segmentation")
             
             # known face recognition

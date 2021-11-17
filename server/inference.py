@@ -31,7 +31,10 @@ class Inferencer:
 
         # human segmantation
         masks = self.model_seg(img)
-        masks = masks.detach().cpu().numpy()
+        if masks:
+            masks = masks.detach().cpu().numpy()
+        else:
+            masks = []
 
         # known face recognition
         mask_unknown = [np.zeros(img.shape[:2], dtype=np.float32)]
