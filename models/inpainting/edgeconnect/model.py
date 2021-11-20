@@ -70,7 +70,8 @@ class InpaintModel:
         input_edge = input_edge.to(self.device)
 
         # forward
-        edge_gen = self.edge_model(input_edge)
+        with torch.no_grad():
+            edge_gen = self.edge_model(input_edge)
 
         # inpainting
         # preprocessing
@@ -81,7 +82,8 @@ class InpaintModel:
         input_inpaint = torch.cat((img_masked, edge_gen), dim=1)
 
         # forward
-        img_gen = self.inpaint_model(input_inpaint)[0]
+        with torch.no_grad():
+            img_gen = self.inpaint_model(input_inpaint)[0]
 
         # postprocessing
         img_gen = torch.moveaxis(img_gen, 0, -1)
