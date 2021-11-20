@@ -119,6 +119,7 @@ class ServeModel:
         return img
 
     def inference(self, img):
+        # settings
         RESIZE_ORG = (480, 1016)
         RESIZE_INP = (108, 192)
 
@@ -163,7 +164,7 @@ class ServeModel:
         return result
 
 
-def main():
+if __name__ == "__main__":
     serve_model = ServeModel()
 
     cap = cv2.VideoCapture("testvideo2.mp4")
@@ -179,7 +180,3 @@ def main():
             cv2.imshow("result", result)
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
-
-
-if __name__ == "__main__":
-    main()
