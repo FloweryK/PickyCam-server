@@ -58,6 +58,7 @@ class InpaintModel:
 
     def __call__(self, img, mask):
         # edge generating
+        # preprocessing
         img_gray = self.t(img, grayscale=True)
         edge = self.t(canny(rgb2gray(img), sigma=1, mask=(1 - mask).astype(bool)))
         mask = self.t(mask)
@@ -67,16 +68,22 @@ class InpaintModel:
         input_edge = torch.cat((img_gray_masked, edge_masked, mask), dim=1)
 
         input_edge = input_edge.to(self.device)
+
+        # forward
         edge_gen = self.edge_model(input_edge)
 
         # inpainting
+        # preprocessing
         img = self.t(img)
 
         img_masked = img * (1 - mask.bool().int()) + mask * 255
         img_masked = img_masked.to(self.device)
         input_inpaint = torch.cat((img_masked, edge_gen), dim=1)
 
+        # forward
         img_gen = self.inpaint_model(input_inpaint)[0]
+
+        # postprocessing
         img_gen = torch.moveaxis(img_gen, 0, -1)
 
         return img_gen
