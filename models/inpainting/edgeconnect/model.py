@@ -8,8 +8,10 @@ from skimage.feature import canny
 
 class InpaintModel:
     def __init__(self, device):
+        # device
         self.device = device
 
+        # edge generator setting
         self.edge_model = EdgeGenerator()
         self.edge_model.load_state_dict(
             torch.load(
@@ -20,6 +22,7 @@ class InpaintModel:
         self.edge_model = self.edge_model.eval()
         self.edge_model = self.edge_model.to(device)
 
+        # inpaint generator setting
         self.inpaint_model = InpaintGenerator()
         self.inpaint_model.load_state_dict(
             torch.load(

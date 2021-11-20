@@ -10,10 +10,10 @@ class SegModel:
 
         # torch/hub.py line 127 and 423 had been modified due to ssl error.
         # please check: https://gentlesark.tistory.com/57
-        # self.model = torch.hub.load('pytorch/vision', 'fcn_resnet101', pretrained=True)
-        self.model = models.segmentation.deeplabv3_resnet50(pretrained=True)
-        self.model = self.model.eval()
-        self.model = self.model.to(device)
+        # self.net = torch.hub.load('pytorch/vision', 'fcn_resnet101', pretrained=True)
+        self.net = models.segmentation.deeplabv3_resnet50(pretrained=True)
+        self.net = self.net.eval()
+        self.net = self.net.to(device)
 
     def t(self, img):
         t = T.Compose(
@@ -27,10 +27,14 @@ class SegModel:
         return t(img)
 
     def __call__(self, img):
+        # preprocess
         img = self.t(img)
         img = img.to(self.device)
 
-        masks = self.model(img)["out"]
+        # forward
+        masks = self.net(img)["out"]
+
+        # postprocess
         mask = torch.argmax(masks.squeeze(), dim=0)
         mask = mask == 15
 
