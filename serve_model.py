@@ -84,9 +84,9 @@ class ServeModel:
         # utils
         self.timer = Timer()
 
-    def human_segmentation(self, img, resize):
+    def human_segmentation(self, img, shape):
         # preprocess
-        img = cv2.resize(img, resize, interpolation=cv2.INTER_AREA)
+        img = cv2.resize(img, shape, interpolation=cv2.INTER_AREA)
 
         # net forward
         masks = self.model_seg(img)
@@ -99,12 +99,12 @@ class ServeModel:
 
         return masks
 
-    def face_recognition(self, img, masks, resize):
+    def face_recognition(self, img, masks, shape):
         # config
-        PAD_RATIO = 0.05
+        PAD_RATIO = 0.04
 
         # preprocess
-        img = cv2.resize(img, resize, interpolation=cv2.INTER_AREA)
+        img = cv2.resize(img, shape, interpolation=cv2.INTER_AREA)
 
         mask_unknown = [np.zeros(img.shape[:2], dtype=np.float32)]
         mask_known = [np.zeros(img.shape[:2], dtype=np.float32)]
@@ -121,7 +121,8 @@ class ServeModel:
         mask_unknown = sum(mask_unknown)
         mask_known = sum(mask_known)
 
-        mask_unknown = pad(mask_unknown, pad=int(PAD_RATIO * resize[0]))
+        # postprocess
+        mask_unknown = pad(mask_unknown, pad=int(PAD_RATIO * img.shape[1]))
         mask_unknown -= mask_known * 100
         mask_unknown = mask_unknown > 0
         mask_unknown = mask_unknown.astype(np.uint8)
@@ -129,45 +130,49 @@ class ServeModel:
 
         return mask_unknown
 
-    def inpaint(self, img, mask, resize):
+    def inpaint(self, img, mask, shape):
         # preprocess
-        img = cv2.resize(img, resize, interpolation=cv2.INTER_AREA)
-        mask = cv2.resize(mask, resize, interpolation=cv2.INTER_AREA)
+        img = cv2.resize(img, shape, interpolation=cv2.INTER_AREA)
+        mask = cv2.resize(mask, shape, interpolation=cv2.INTER_AREA)
 
         # net forward
         img = self.model_inp(img, mask)
         return img
 
     def inference(self, img):
+        # config
+        WIDTH_SEG = 480
+        WIDTH_INP = 100
+
         # settings
-        RESIZE_ORG = img.shape[:2][::-1]
-        RESIZE_SEG = cal_shape(RESIZE_ORG, w_target=480, by4=False)
-        RESIZE_INP = cal_shape(RESIZE_ORG, w_target=100, by4=True)
+        shape_org = img.shape[:2][::-1]
+        shape_seg = cal_shape(shape_org, w_target=WIDTH_SEG, by4=False)
+        shape_inp = cal_shape(shape_org, w_target=WIDTH_INP, by4=True)
 
         # timer
         self.timer.initialize()
 
         # convert from BGR to RGB
-        img = cv2.resize(img, RESIZE_ORG, cv2.INTER_AREA)
+        img = cv2.resize(img, shape_org, interpolation=cv2.INTER_AREA)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         # human segmantation
-        masks = self.human_segmentation(img, RESIZE_SEG)
+        masks = self.human_segmentation(img, shape_seg)
         self.timer.check("human segmentation")
 
         # known face recognition
-        mask = self.face_recognition(img, masks, RESIZE_SEG)
+        mask = self.face_recognition(img, masks, shape_seg)
         self.timer.check("known face recognition")
 
         # inpainting
-        img_inp = self.inpaint(img, mask, RESIZE_INP)
+        img_inp = self.inpaint(img, mask, shape_inp)
         img_inp = img_inp.detach().cpu().numpy()
         img_inp = cv2.convertScaleAbs(img_inp, alpha=(255.0))
         self.timer.check("inpainting")
 
         # resize to original size
-        mask = cv2.resize(mask, RESIZE_ORG, interpolation=cv2.INTER_NEAREST)
-        img_inp = cv2.resize(img_inp, RESIZE_ORG, interpolation=cv2.INTER_CUBIC)
+        mask = cv2.resize(mask, shape_org, interpolation=cv2.INTER_NEAREST)
+        img_inp = cv2.resize(img_inp, shape_org, interpolation=cv2.INTER_CUBIC)
 
         # replace human into inpainted background
         img_erased = replace_masked_area(img, img_inp, mask)
