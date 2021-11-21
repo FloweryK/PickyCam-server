@@ -5,6 +5,17 @@ from models.inpainting.edgeconnect.model import InpaintModel
 from utils.timer import Timer
 
 
+def cal_shape(shape, w_target, by4=False):
+    w, h = shape
+    h_target = int(h * (w_target / w))
+
+    if by4:
+        r = h_target % 4
+        h_target += (4 - r) if r > 2 else (-r)
+
+    return (w_target, h_target)
+
+
 def pad(mask, pad=3):
     # pad masked area
     kernel = np.ones((1 + 2 * pad, 1 + 2 * pad))
@@ -63,7 +74,6 @@ def write_text_on_image(img, text):
 
 class ServeModel:
     def __init__(self):
-        # Process Inferencers
         # TODO: leave out direct configs
         DEVICE = "cuda"
 
@@ -74,17 +84,27 @@ class ServeModel:
         # utils
         self.timer = Timer()
 
-    def human_segmentation(self, img):
+    def human_segmentation(self, img, resize):
+        # preprocess
+        img = cv2.resize(img, resize, interpolation=cv2.INTER_AREA)
+
+        # net forward
         masks = self.model_seg(img)
+
+        # postprocess
         if type(masks) != type(None):  # TODO: code cleaning
             masks = masks.detach().cpu().numpy()
         else:
             masks = []
+
         return masks
 
-    def face_recognition(self, img, masks):
+    def face_recognition(self, img, masks, resize):
         # config
         PAD = 15
+
+        # preprocess
+        img = cv2.resize(img, resize, interpolation=cv2.INTER_AREA)
 
         mask_unknown = [np.zeros(img.shape[:2], dtype=np.float32)]
         mask_known = [np.zeros(img.shape[:2], dtype=np.float32)]
@@ -120,21 +140,23 @@ class ServeModel:
 
     def inference(self, img):
         # settings
-        RESIZE_ORG = (480, 1016)
-        RESIZE_INP = (108, 192)
+        RESIZE_ORG = img.shape[:2][::-1]
+        RESIZE_SEG = cal_shape(RESIZE_ORG, w_target=480, by4=False)
+        RESIZE_INP = cal_shape(RESIZE_ORG, w_target=100, by4=True)
 
         # timer
         self.timer.initialize()
 
         # convert from BGR to RGB
+        img = cv2.resize(img, RESIZE_ORG, cv2.INTER_AREA)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         # human segmantation
-        masks = self.human_segmentation(img)
+        masks = self.human_segmentation(img, RESIZE_SEG)
         self.timer.check("human segmentation")
 
         # known face recognition
-        mask = self.face_recognition(img, masks)
+        mask = self.face_recognition(img, masks, RESIZE_SEG)
         self.timer.check("known face recognition")
 
         # inpainting
@@ -149,6 +171,7 @@ class ServeModel:
 
         # replace human into inpainted background
         img_erased = replace_masked_area(img, img_inp, mask)
+        self.timer.check("merging")
 
         # CODES BELOW ARE SOLELY FOR DEV OPTION
         # make img with mask color
@@ -157,7 +180,7 @@ class ServeModel:
         # tetris display
         result = merge_4by4(img, img_mask, img_inp, img_erased, width=500)
         result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
-        self.timer.check("merging")
+        self.timer.check("dev merging")
 
         # write fps info
         result = write_text_on_image(result, self.timer.get_result_as_text())
