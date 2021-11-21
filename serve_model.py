@@ -101,7 +101,7 @@ class ServeModel:
 
     def face_recognition(self, img, masks, resize):
         # config
-        PAD = 15
+        PAD_RATIO = 0.05
 
         # preprocess
         img = cv2.resize(img, resize, interpolation=cv2.INTER_AREA)
@@ -121,7 +121,7 @@ class ServeModel:
         mask_unknown = sum(mask_unknown)
         mask_known = sum(mask_known)
 
-        mask_unknown = pad(mask_unknown, PAD)
+        mask_unknown = pad(mask_unknown, pad=int(PAD_RATIO * resize[0]))
         mask_unknown -= mask_known * 100
         mask_unknown = mask_unknown > 0
         mask_unknown = mask_unknown.astype(np.uint8)
