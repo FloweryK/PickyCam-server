@@ -1,4 +1,5 @@
 import base64
+import argparse
 import cv2
 import numpy as np
 from flask import Flask
@@ -18,10 +19,6 @@ def img_to_base64(img):
     string = base64.b64encode(buffer)
     return string
 
-
-# server config
-HOST = "0.0.0.0"
-PORT = 8000
 
 # define server
 app = Flask(__name__)
@@ -47,8 +44,8 @@ def on_disconnect():
     print("client disconnected.")
 
 
-@socketio.on("upload")
-def upload(data):
+@socketio.on("request")
+def request(data):
     print("got frame from client: ", data["frame"][-10:])
 
     # read data
@@ -68,4 +65,15 @@ def upload(data):
 
 
 if __name__ == "__main__":
+    # argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", type=str, help="host address", default="localhost")
+    parser.add_argument("--port", type=int, help="port number", required=True)
+
+    args = parser.parse_args()
+
+    # server config
+    HOST = args.host
+    PORT = args.port
+
     socketio.run(app, host=HOST, port=PORT, debug=True)

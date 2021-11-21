@@ -1,3 +1,4 @@
+import argparse
 import base64
 import socketio
 import cv2
@@ -16,10 +17,6 @@ def base64_to_img(string):
     img = cv2.imdecode(img_np, flags=1)
     return img
 
-
-# client config
-HOST = "localhost"
-PORT = 8000
 
 # define client
 sio = socketio.Client()
@@ -46,24 +43,35 @@ def response(data):
     img = base64_to_img(string)
 
     # show image
-    while True:
-        cv2.imshow("result", img)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+    # while True:
+    #     cv2.imshow("result", img)
+    #     if cv2.waitKey(1) & 0xFF == ord("q"):
+    #         break
 
 
-# start connection
-sio.connect(f"http://{HOST}:{PORT}")
+if __name__ == "__main__":
+    # argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", type=str, help="host address", required=True)
+    parser.add_argument("--port", type=int, help="port number", required=True)
 
-# emit event
-cap = cv2.VideoCapture("testvideo2.mp4")
-while cap.isOpened():
-    success, img = cap.read()
+    args = parser.parse_args()
 
-    if success:
-        string = img_to_base64(img)
-        sio.call("upload", {"frame": string})
+    # client config
+    HOST = args.host
+    PORT = args.port
 
+    # start connection
+    sio.connect(f"http://{HOST}:{PORT}")
 
-# disconnect
-sio.disconnect()
+    # emit event
+    cap = cv2.VideoCapture("testvideo2.mp4")
+    while cap.isOpened():
+        success, img = cap.read()
+
+        if success:
+            string = img_to_base64(img)
+            sio.call("request", {"frame": string})
+
+    # disconnect
+    sio.disconnect()
