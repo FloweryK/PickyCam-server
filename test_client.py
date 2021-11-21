@@ -53,7 +53,7 @@ def response(data):
 
 
 # start connection
-sio.connect("http://localhost:8000")
+sio.connect(f"http://{HOST}:{PORT}")
 
 # emit event
 cap = cv2.VideoCapture("testvideo2.mp4")

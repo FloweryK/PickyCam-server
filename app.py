@@ -20,7 +20,7 @@ def img_to_base64(img):
 
 
 # server config
-HOST = "localhost"
+HOST = "0.0.0.0"
 PORT = 8000
 
 # define server
