@@ -1,5 +1,6 @@
-import argparse
+import time
 import base64
+import argparse
 import socketio
 import cv2
 import numpy as np
@@ -34,10 +35,26 @@ def disconnect():
 
 @sio.event
 def response(data):
-    print("got response from server: ", data["processed"][-10:])
+    # check response arrival time
+    date_res_arrive = time.time()
 
     # read data
-    string = data["processed"]
+    string = data["frame"]
+    date_req_depart = data["date_req_depart"]
+    date_req_arrive = data["date_req_arrive"]
+    date_res_depart = data["date_res_depart"]
+    interval_base2img = data["interval_base2img"]
+    interval_inference = data["interval_inference"]
+    interval_img2base = data["interval_img2base"]
+
+    # make text
+    text = f"got response from server: {string[-10:]}"
+    text += f"\nclient->server: {(date_req_arrive-date_req_depart)*1000:4.1f}ms"
+    text += f" | base2img: {interval_base2img:4.1f}ms"
+    text += f" | inference: {interval_inference:4.1f}ms"
+    text += f" | img2base: {interval_img2base:4.1f}ms"
+    text += f" | server->client: {(date_res_arrive-date_res_depart)*1000:4.1f}ms"
+    print(text)
 
     # convert from base64 to cv2 format
     img = base64_to_img(string)
@@ -70,8 +87,17 @@ if __name__ == "__main__":
         success, img = cap.read()
 
         if success:
+            # make data
             string = img_to_base64(img)
-            sio.call("request", {"frame": string})
+            date_req_depart = time.time()
+
+            # make json
+            json = {
+                "frame": string,
+                "date_req_depart": date_req_depart,
+            }
+
+            sio.call("request", json)
 
     # disconnect
     sio.disconnect()

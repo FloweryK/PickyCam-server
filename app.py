@@ -1,3 +1,4 @@
+import time
 import base64
 import argparse
 import cv2
@@ -46,22 +47,48 @@ def on_disconnect():
 
 @socketio.on("request")
 def request(data):
-    print("got frame from client: ", data["frame"][-10:])
+    # check request arrival time
+    date_req_arrive = time.time()
 
     # read data
     string = data["frame"]
+    date_req_depart = data["date_req_depart"]
+
+    # make text
+    text = f"got request from client: {string[-10:]}"
+    print(text)
 
     # convert from base64 to cv2 format
+    start = time.time()
     img = base64_to_img(string)
+    interval_base2img = (time.time() - start) * 1000
 
-    # process image
+    # inference
+    start = time.time()
     img_processed = serve_model.inference(img)
+    interval_inference = (time.time() - start) * 1000
 
     # convert from cv2 format to base64
+    start = time.time()
     string_processed = img_to_base64(img_processed)
+    interval_img2base = (time.time() - start) * 1000
+
+    # check response departure time
+    date_res_depart = time.time()
+
+    # make json
+    json = {
+        "frame": string_processed,
+        "date_req_depart": date_req_depart,
+        "date_req_arrive": date_req_arrive,
+        "date_res_depart": date_res_depart,
+        "interval_base2img": interval_base2img,
+        "interval_inference": interval_inference,
+        "interval_img2base": interval_img2base,
+    }
 
     # response
-    socketio.emit("response", {"processed": string_processed})
+    socketio.emit("response", json)
 
 
 if __name__ == "__main__":
