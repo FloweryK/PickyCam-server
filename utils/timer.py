@@ -6,8 +6,18 @@ class Timer:
     def __init__(self):
         self.time = []
         self.name = []
+        self.history = {}
 
     def initialize(self):
+        for i in range(1, len(self.time)):
+            name = self.name[i]
+            interval = self.time[i] - self.time[i - 1]
+
+            try:
+                self.history[name].append(interval)
+            except KeyError:
+                self.history[name] = [interval]
+
         self.time = [time.time()]
         self.name = ["start"]
 
@@ -24,10 +34,10 @@ class Timer:
 
         # remaining times
         for i in range(1, len(self.time)):
+            name = self.name[i]
             time_now = self.time[i]
             time_prev = self.time[i - 1]
             interval = (time_now - time_prev) * 1000  # in ms
-            name = self.name[i]
 
             result += f"\n{name}: {interval:.1f}ms"
 

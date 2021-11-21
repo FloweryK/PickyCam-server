@@ -1,5 +1,9 @@
 import cv2
 import numpy as np
+import matplotlib
+
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
 from models.segmentation.yolact.model import SegModel
 from models.inpainting.edgeconnect.model import InpaintModel
 from utils.timer import Timer
@@ -73,6 +77,8 @@ class ServeModel:
 
         # utils
         self.timer = Timer()
+        self.perf_fig = plt.figure(figsize=(5.00, 3.00), dpi=100)
+        self.perf_axes = self.perf_fig.add_subplot(111)
 
     def human_segmentation(self, img):
         masks = self.model_seg(img)
@@ -120,6 +126,7 @@ class ServeModel:
 
     def inference(self, img):
         # settings
+        WIDTH = 500
         RESIZE_ORG = (480, 1016)
         RESIZE_INP = (108, 192)
 
@@ -150,11 +157,32 @@ class ServeModel:
         # replace human into inpainted background
         img_erased = replace_masked_area(img, img_inp, mask)
 
+        # CODES BELOW ARE SOLELY FOR DEV OPTION
         # make img with mask color
         img_mask = overlay_mask(img, mask)
 
+        # get performance statistics
+        lines = {}
+        for name, intervals in self.timer.history.items():
+            intervals = intervals[1:]
+            x = np.arange(len(intervals))
+            if name in lines:
+                lines[name].set_data(x, intervals)
+            else:
+                lines[name] = self.perf_axes.plot(x, intervals)
+        self.perf_axes.relim()
+        self.perf_axes.autoscale_view(True, True, True)
+        self.perf_fig.canvas.draw()
+        img_perf = np.fromstring(
+            self.perf_fig.canvas.tostring_rgb(), dtype=np.uint8, sep=""
+        )
+        img_perf = img_perf.reshape(
+            self.perf_fig.canvas.get_width_height()[::-1] + (3,)
+        )
+
         # tetris display
-        result = merge_4by4(img, img_mask, img_inp, img_erased, width=500)
+        result = merge_4by4(img, img_mask, img_inp, img_erased, WIDTH)
+        result = np.vstack((img_perf, result))
         result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
         self.timer.check("merging")
 
