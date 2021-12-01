@@ -1,8 +1,16 @@
-**/__pycache__/
-**/.DS_Store
-**/*.avi
-**/.idea
+# commons
 venv/
+**/__pycache__/
+**/.idea
+
+# mac
+**/.DS_Store
+
+# vscode
+.vscode
+
+# custom files
+**/*.avi
 **/**.png
 **/**.pth
-.vscode
+*.mp4
