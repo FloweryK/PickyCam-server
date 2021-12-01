@@ -194,9 +194,18 @@ class ServeModel:
 
 
 if __name__ == "__main__":
+    # tmp import only for testing
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--video", required=True, type=str)
+    args = parser.parse_args()
+
+    video_path = args.video
+
     serve_model = ServeModel()
 
-    cap = cv2.VideoCapture("testvideo2.mp4")
+    cap = cv2.VideoCapture(video_path)
 
     while cap.isOpened():
         # cv2 is in BGR format
