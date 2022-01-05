@@ -27,4 +27,6 @@ $ python serve_model.py --video {videopath}
 
 ### Sample Result
 
+Click below image to see sample result video on youtube
+
 [![sample result video](https://img.youtube.com/vi/hA-ZK55d9Kk/0.jpg)](https://youtu.be/hA-ZK55d9Kk)
