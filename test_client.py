@@ -66,18 +66,20 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, help="host address", required=True)
     parser.add_argument("--port", type=int, help="port number", required=True)
+    parser.add_argument("--video", required=True, type=str)
 
     args = parser.parse_args()
 
     # client config
     HOST = args.host
     PORT = args.port
+    video_path = args.video
 
     # start connection
     sio.connect(f"http://{HOST}:{PORT}", wait_timeout=10)
 
     # emit event
-    cap = cv2.VideoCapture("testvideo2.mp4")
+    cap = cv2.VideoCapture(video_path)
     while cap.isOpened():
         success, img = cap.read()
 
