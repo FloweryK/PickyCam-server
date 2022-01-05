@@ -58,12 +58,7 @@ def response(data):
 
     # convert from base64 to cv2 format
     img = base64_to_img(string)
-
-    # show image
-    # while True:
-    #     cv2.imshow("result", img)
-    #     if cv2.waitKey(1) & 0xFF == ord("q"):
-    #         break
+    print(text)
 
 
 if __name__ == "__main__":
@@ -79,7 +74,7 @@ if __name__ == "__main__":
     PORT = args.port
 
     # start connection
-    sio.connect(f"http://{HOST}:{PORT}")
+    sio.connect(f"http://{HOST}:{PORT}", wait_timeout=10)
 
     # emit event
     cap = cv2.VideoCapture("testvideo2.mp4")
