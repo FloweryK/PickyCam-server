@@ -111,7 +111,8 @@ class ServeModel:
 
         for i, mask in enumerate(masks):
             # TODO: face recognition
-            known = True if i == 0 else False
+            # known = True if i == 0 else False
+            known = False
 
             if known:
                 mask_known.append(mask)

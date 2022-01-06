@@ -2,6 +2,7 @@ import time
 import base64
 import argparse
 import cv2
+import json
 import numpy as np
 from flask import Flask
 from flask_socketio import SocketIO
@@ -16,8 +17,8 @@ def base64_to_img(string):
 
 
 def img_to_base64(img):
-    _, buffer = cv2.imencode(".jpg", img)
-    string = base64.b64encode(buffer)
+    _, buffer = cv2.imencode(".jpg", img, [int(cv2.IMWRITE_JPEG_QUALITY), 45])
+    string = str(base64.b64encode(buffer))
     return string
 
 
@@ -48,47 +49,50 @@ def on_disconnect():
 @socketio.on("request")
 def request(data):
     # check request arrival time
-    date_req_arrive = time.time()
+    # date_req_arrive = time.time()
 
     # read data
     string = data["frame"]
-    date_req_depart = data["date_req_depart"]
+    # date_req_depart = data["date_req_depart"]
 
     # make text
     text = f"got request from client: {string[-10:]}"
     print(text)
 
     # convert from base64 to cv2 format
-    start = time.time()
+    # start = time.time()
     img = base64_to_img(string)
-    interval_base2img = (time.time() - start) * 1000
+    # interval_base2img = (time.time() - start) * 1000
 
     # inference
-    start = time.time()
+    # start = time.time()
     img_processed = serve_model.inference(img)
-    interval_inference = (time.time() - start) * 1000
+    # interval_inference = (time.time() - start) * 1000
 
     # convert from cv2 format to base64
-    start = time.time()
+    # start = time.time()
     string_processed = img_to_base64(img_processed)
-    interval_img2base = (time.time() - start) * 1000
+    print(type(string_processed))
+    # interval_img2base = (time.time() - start) * 1000
 
     # check response departure time
-    date_res_depart = time.time()
+    # date_res_depart = time.time()
 
     # make json
-    json = {
+    data = {
         "frame": string_processed,
-        "date_req_depart": date_req_depart,
-        "date_req_arrive": date_req_arrive,
-        "date_res_depart": date_res_depart,
-        "interval_base2img": interval_base2img,
-        "interval_inference": interval_inference,
-        "interval_img2base": interval_img2base,
+        # "date_req_depart": date_req_depart,
+        # "date_req_arrive": date_req_arrive,
+        # "date_res_depart": date_res_depart,
+        # "interval_base2img": interval_base2img,
+        # "interval_inference": interval_inference,
+        # "interval_img2base": interval_img2base,
     }
 
+    data = json.dumps(data)
+
     # response
-    socketio.emit("response", json)
+    socketio.emit("response", data)
 
 
 if __name__ == "__main__":

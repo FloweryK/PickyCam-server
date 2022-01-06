@@ -246,9 +246,9 @@ def get_config(args, mode, device):
 
     cfg = globals()[args.cfg](args)
 
-    if not args.cuda or args.mode != 'train':
-        cfg.print_cfg()
-    elif dist.get_rank() == 0:
-        cfg.print_cfg()
+    # if not args.cuda or args.mode != 'train':
+    #     cfg.print_cfg()
+    # elif dist.get_rank() == 0:
+    #     cfg.print_cfg()
 
     return cfg
