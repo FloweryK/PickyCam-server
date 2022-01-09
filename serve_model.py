@@ -140,7 +140,7 @@ class ServeModel:
         img = self.model_inp(img, mask)
         return img
 
-    def inference(self, img):
+    def inference(self, img, mode="dev", cameraType="back"):
         # config
         WIDTH_SEG = 480
         WIDTH_INP = 100
@@ -184,12 +184,16 @@ class ServeModel:
         img_mask = overlay_mask(img, mask)
 
         # tetris display
-        result = merge_4by4(img, img_mask, img_inp, img_erased, width=500)
+        if mode == "dev":
+            result = merge_4by4(img, img_mask, img_inp, img_erased, width=500)
+        else:
+            result = img_erased
         result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
         self.timer.check("dev merging")
 
         # write fps info
-        result = write_text_on_image(result, self.timer.get_result_as_text())
+        if mode == "dev":
+            result = write_text_on_image(result, self.timer.get_result_as_text())
 
         return result
 

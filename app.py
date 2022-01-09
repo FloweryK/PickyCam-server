@@ -4,7 +4,7 @@ import argparse
 import cv2
 import json
 import numpy as np
-from flask import Flask
+from flask import Flask, request
 from flask_socketio import SocketIO
 from serve_model import ServeModel
 
@@ -47,12 +47,14 @@ def on_disconnect():
 
 
 @socketio.on("request")
-def request(data):
+def process(data):
     # check request arrival time
     # date_req_arrive = time.time()
 
     # read data
     string = data["frame"]
+    mode = data["mode"]
+    cameraType = data["cameraType"]
     # date_req_depart = data["date_req_depart"]
 
     # make text
@@ -66,13 +68,12 @@ def request(data):
 
     # inference
     # start = time.time()
-    img_processed = serve_model.inference(img)
+    img_processed = serve_model.inference(img, mode, cameraType)
     # interval_inference = (time.time() - start) * 1000
 
     # convert from cv2 format to base64
     # start = time.time()
     string_processed = img_to_base64(img_processed)
-    print(type(string_processed))
     # interval_img2base = (time.time() - start) * 1000
 
     # check response departure time
@@ -92,7 +93,7 @@ def request(data):
     data = json.dumps(data)
 
     # response
-    socketio.emit("response", data)
+    socketio.emit("response", data, room=request.sid)
 
 
 if __name__ == "__main__":
