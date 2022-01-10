@@ -53,13 +53,13 @@ def process(data):
 
     # read data
     string = data["frame"]
-    mode = data["mode"]
-    cameraType = data["cameraType"]
+    options = data["options"]
     # date_req_depart = data["date_req_depart"]
 
     # make text
     text = f"got request from client: {string[-10:]}"
     print(text)
+    print(options)
 
     # convert from base64 to cv2 format
     # start = time.time()
@@ -68,7 +68,7 @@ def process(data):
 
     # inference
     # start = time.time()
-    img_processed = serve_model.inference(img, mode, cameraType)
+    img_processed = serve_model.inference(img, options)
     # interval_inference = (time.time() - start) * 1000
 
     # convert from cv2 format to base64
