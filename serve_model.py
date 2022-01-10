@@ -16,7 +16,7 @@ def cal_shape(shape, w_target, by4=False):
     return (w_target, h_target)
 
 
-def pad(mask, pad=3):
+def padding(mask, pad=3):
     # pad masked area
     kernel = np.ones((1 + 2 * pad, 1 + 2 * pad))
     mask = cv2.filter2D(mask.astype(np.float32), -1, kernel)
@@ -99,10 +99,7 @@ class ServeModel:
 
         return masks
 
-    def face_recognition(self, img, masks, shape):
-        # config
-        PAD_RATIO = 0.04
-
+    def face_recognition(self, img, masks, shape, pad_ratio):
         # preprocess
         img = cv2.resize(img, shape, interpolation=cv2.INTER_AREA)
 
@@ -123,7 +120,7 @@ class ServeModel:
         mask_known = sum(mask_known)
 
         # postprocess
-        mask_unknown = pad(mask_unknown, pad=int(PAD_RATIO * img.shape[1]))
+        mask_unknown = padding(mask_unknown, pad=int(pad_ratio * img.shape[1]))
         mask_unknown -= mask_known * 100
         mask_unknown = mask_unknown > 0
         mask_unknown = mask_unknown.astype(np.uint8)
@@ -140,10 +137,17 @@ class ServeModel:
         img = self.model_inp(img, mask)
         return img
 
-    def inference(self, img, options):
+    def inference(self, img, options={
+        "width_seg": 480,
+        "width_inp": 100,
+        "pad_ratio": 0.04,
+        "isDebug": False
+    }):
         # config
         WIDTH_SEG = options["width_seg"]
         WIDTH_INP = options["width_inp"]
+        PAD_RATIO = options["pad_ratio"]
+        IS_DEBUG = options["isDebug"]
 
         # settings
         shape_org = img.shape[:2][::-1]
@@ -162,7 +166,7 @@ class ServeModel:
         self.timer.check("human segmentation")
 
         # known face recognition
-        mask = self.face_recognition(img, masks, shape_seg)
+        mask = self.face_recognition(img, masks, shape_seg, PAD_RATIO)
         self.timer.check("known face recognition")
 
         # inpainting
@@ -184,7 +188,7 @@ class ServeModel:
         img_mask = overlay_mask(img, mask)
 
         # tetris display
-        if options['isDebug']:
+        if IS_DEBUG:
             result = merge_4by4(img, img_mask, img_inp, img_erased, width=500)
         else:
             result = img_erased
@@ -192,7 +196,7 @@ class ServeModel:
         self.timer.check("dev merging")
 
         # write fps info
-        if options['isDebug']:
+        if IS_DEBUG:
             result = write_text_on_image(result, self.timer.get_result_as_text())
 
         return result
