@@ -50,33 +50,33 @@ class ServeModel:
     def face_recognition(self, img, masks, shape):
         knowns = [False for _ in range(len(masks))]
 
-        # preprocess
-        img = cv2.resize(img, shape, interpolation=cv2.INTER_AREA)
+        # # preprocess
+        # img = cv2.resize(img, shape, interpolation=cv2.INTER_AREA)
 
-        # extract all faces
-        face_locations = fr.face_locations(img)
-        face_encodings = fr.face_encodings(img, face_locations)
+        # # extract all faces
+        # face_locations = fr.face_locations(img)
+        # face_encodings = fr.face_encodings(img, face_locations)
 
         # # match face locations to mask
-        if len(masks) > 0:
-            face_to_mask = {}
-            shape_mask = masks[0].shape[::-1]
-            r = (shape_mask[0] / shape[0])
+        # if len(masks) > 0:
+        #     face_to_mask = {}
+        #     shape_mask = masks[0].shape[::-1]
+        #     r = (shape_mask[0] / shape[0])
 
-            for i, location in enumerate(face_locations):
-                ymin, xmax, ymax, xmin = (np.array(location) * r).astype(int).tolist()
+        #     for i, location in enumerate(face_locations):
+        #         ymin, xmax, ymax, xmin = (np.array(location) * r).astype(int).tolist()
 
-                areas = [np.sum(mask[xmin:xmax, ymin:ymax]) for mask in masks]
-                face_to_mask[i] = np.argmax(areas)
+        #         areas = [np.sum(mask[xmin:xmax, ymin:ymax]) for mask in masks]
+        #         face_to_mask[i] = np.argmax(areas)
 
-            # find known face
-            for i, encoding in enumerate(face_encodings):
-                face_distances = fr.face_distance(self.known_faces, encoding)
+        #     # find known face
+        #     for i, encoding in enumerate(face_encodings):
+        #         face_distances = fr.face_distance(self.known_faces, encoding)
                 
-                known = (np.array(face_distances) < 0.5).any()
+        #         known = (np.array(face_distances) < 0.5).any()
 
-                if known:
-                    knowns[face_to_mask[i]] = True
+        #         if known:
+        #             knowns[face_to_mask[i]] = True
 
         return knowns
 
@@ -169,7 +169,7 @@ class ServeModel:
         if IS_DEBUG:
             result = merge_4by4(img, img_mask, img_inp, img_erased, width=500)
         else:
-            result = img
+            result = img_erased
         result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
         self.timer.check("dev merging")
 
