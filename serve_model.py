@@ -50,33 +50,33 @@ class ServeModel:
     def face_recognition(self, img, masks, shape):
         knowns = [False for _ in range(len(masks))]
 
-        # # preprocess
-        # img = cv2.resize(img, shape, interpolation=cv2.INTER_AREA)
+        # preprocess
+        img = cv2.resize(img, shape, interpolation=cv2.INTER_AREA)
 
-        # # extract all faces
-        # face_locations = fr.face_locations(img)
-        # face_encodings = fr.face_encodings(img, face_locations)
+        # extract all faces
+        face_locations = fr.face_locations(img)
+        face_encodings = fr.face_encodings(img, face_locations)
 
-        # # match face locations to mask
-        # if len(masks) > 0:
-        #     face_to_mask = {}
-        #     shape_mask = masks[0].shape[::-1]
-        #     r = (shape_mask[0] / shape[0])
+        # match face locations to mask
+        if len(masks) > 0:
+            face_to_mask = {}
+            shape_mask = masks[0].shape[::-1]
+            r = (shape_mask[0] / shape[0])
 
-        #     for i, location in enumerate(face_locations):
-        #         ymin, xmax, ymax, xmin = (np.array(location) * r).astype(int).tolist()
+            for i, location in enumerate(face_locations):
+                ymin, xmax, ymax, xmin = (np.array(location) * r).astype(int).tolist()
 
-        #         areas = [np.sum(mask[xmin:xmax, ymin:ymax]) for mask in masks]
-        #         face_to_mask[i] = np.argmax(areas)
+                areas = [np.sum(mask[xmin:xmax, ymin:ymax]) for mask in masks]
+                face_to_mask[i] = np.argmax(areas)
 
-        #     # find known face
-        #     for i, encoding in enumerate(face_encodings):
-        #         face_distances = fr.face_distance(self.known_faces, encoding)
+            # find known face
+            for i, encoding in enumerate(face_encodings):
+                face_distances = fr.face_distance(self.known_faces, encoding)
                 
-        #         known = (np.array(face_distances) < 0.5).any()
+                known = (np.array(face_distances) < 0.5).any()
 
-        #         if known:
-        #             knowns[face_to_mask[i]] = True
+                if known:
+                    knowns[face_to_mask[i]] = True
 
         return knowns
 
@@ -95,7 +95,8 @@ class ServeModel:
         "width_inp": 100,
         "pad_ratio_known": 0.01,
         "pad_ratio_unknown": 0.04,
-        "isDebug": False
+        "isDebug": False,
+        "faceDetect": True
     }):
         # config
         WIDTH_SEG = options["width_seg"]
@@ -104,6 +105,7 @@ class ServeModel:
         PAD_RATIO_KNOWN = options["pad_ratio_known"]
         PAD_RATIO_UNKNOWN = options["pad_ratio_unknown"]
         IS_DEBUG = options["isDebug"]
+        FACE_DETECT = options["faceDetect"]
 
         # settings
         shape_org = img.shape[:2][::-1]
@@ -123,7 +125,10 @@ class ServeModel:
         self.timer.check("human segmentation")
 
         # known face recognition
-        knowns = self.face_recognition(img, masks, shape_fcr)
+        if FACE_DETECT:
+            knowns = self.face_recognition(img, masks, shape_fcr)
+        else:
+            knowns = [False for _ in range(len(masks))]
         self.timer.check("known face recognition")
 
         # post process 
@@ -187,6 +192,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--video", required=True, type=str)
     parser.add_argument("--debug", default=True, type=bool)
+    parser.add_argument("--faceDetect", default=True, type=bool)
     parser.add_argument("--width_seg", default=480, type=int)
     parser.add_argument("--width_fcr", default=480, type=int)
     parser.add_argument("--width_inp", default=100, type=int)
@@ -197,6 +203,7 @@ if __name__ == "__main__":
 
     video_path = args.video
     isDebug = args.debug
+    faceDetect = args.faceDetect
     width_seg = args.width_seg
     width_fcr = args.width_fcr
     width_inp = args.width_inp
@@ -209,7 +216,8 @@ if __name__ == "__main__":
         "width_fcr": width_fcr,
         "pad_ratio_known": pad_ratio_known,
         "pad_ratio_unknown": pad_ratio_unknown,
-        "isDebug": isDebug
+        "isDebug": isDebug,
+        "faceDetect": faceDetect
     }
 
     serve_model = ServeModel()
