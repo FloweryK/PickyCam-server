@@ -51,8 +51,6 @@ def process(data):
     # read data
     string = data["frame"]
     options = data["options"]
-
-    # make text
     print(options)
 
     # convert from base64 to cv2 format
@@ -65,11 +63,9 @@ def process(data):
     string_processed = img_to_base64(img_processed)
 
     # make json
-    res = {
+    res = json.dumps({
         "frame": string_processed,
-    }
-
-    res = json.dumps(res)
+    })
 
     # response
     socketio.emit("response", res, room=request.sid)
