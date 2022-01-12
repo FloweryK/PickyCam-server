@@ -48,52 +48,31 @@ def on_disconnect():
 
 @socketio.on("request")
 def process(data):
-    # check request arrival time
-    # date_req_arrive = time.time()
-
     # read data
     string = data["frame"]
     options = data["options"]
-    # date_req_depart = data["date_req_depart"]
 
     # make text
-    text = f"got request from client: {string[-10:]}"
-    print(text)
     print(options)
 
     # convert from base64 to cv2 format
-    # start = time.time()
     img = base64_to_img(string)
-    # interval_base2img = (time.time() - start) * 1000
 
     # inference
-    # start = time.time()
     img_processed = serve_model.inference(img, options)
-    # interval_inference = (time.time() - start) * 1000
 
     # convert from cv2 format to base64
-    # start = time.time()
     string_processed = img_to_base64(img_processed)
-    # interval_img2base = (time.time() - start) * 1000
-
-    # check response departure time
-    # date_res_depart = time.time()
 
     # make json
-    data = {
+    res = {
         "frame": string_processed,
-        # "date_req_depart": date_req_depart,
-        # "date_req_arrive": date_req_arrive,
-        # "date_res_depart": date_res_depart,
-        # "interval_base2img": interval_base2img,
-        # "interval_inference": interval_inference,
-        # "interval_img2base": interval_img2base,
     }
 
-    data = json.dumps(data)
+    res = json.dumps(res)
 
     # response
-    socketio.emit("response", data, room=request.sid)
+    socketio.emit("response", res, room=request.sid)
 
 
 if __name__ == "__main__":
