@@ -50,14 +50,14 @@ def on_disconnect():
 def process(data):
     # read data
     string = data["frame"]
-    options = data["options"]
-    print(options)
+    settings = data["settings"]
+    print(settings)
 
     # convert from base64 to cv2 format
     img = base64_to_img(string)
 
     # inference
-    img_processed = serve_model.inference(img, options)
+    img_processed = serve_model.inference(img, settings)
 
     # convert from cv2 format to base64
     string_processed = img_to_base64(img_processed)

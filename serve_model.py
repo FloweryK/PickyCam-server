@@ -89,7 +89,7 @@ class ServeModel:
         img = self.model_inp(img, mask)
         return img
 
-    def inference(self, img, options={
+    def inference(self, img, settings={
         "width_seg": 480,
         "width_fcr": 240,
         "width_inp": 100,
@@ -99,13 +99,13 @@ class ServeModel:
         "faceDetect": True
     }):
         # config
-        WIDTH_SEG = options["width_seg"]
-        WIDTH_FCR = options["width_fcr"]
-        WIDTH_INP = options["width_inp"]
-        PAD_RATIO_KNOWN = options["pad_ratio_known"]
-        PAD_RATIO_UNKNOWN = options["pad_ratio_unknown"]
-        IS_DEBUG = options["isDebug"]
-        FACE_DETECT = options["faceDetect"]
+        WIDTH_SEG = settings["width_seg"]
+        WIDTH_FCR = settings["width_fcr"]
+        WIDTH_INP = settings["width_inp"]
+        PAD_RATIO_KNOWN = settings["pad_ratio_known"]
+        PAD_RATIO_UNKNOWN = settings["pad_ratio_unknown"]
+        IS_DEBUG = settings["isDebug"]
+        FACE_DETECT = settings["faceDetect"]
 
         # settings
         shape_org = img.shape[:2][::-1]
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     pad_ratio_known = args.pad_ratio_known
     pad_ratio_unknown = args.pad_ratio_unknown
 
-    options = {
+    settings = {
         "width_seg": width_seg,
         "width_inp": width_inp,
         "width_fcr": width_fcr,
@@ -229,7 +229,7 @@ if __name__ == "__main__":
         success, img = cap.read()
 
         if success:
-            result = serve_model.inference(img, options=options)
+            result = serve_model.inference(img, settings=settings)
 
             # show result
             cv2.imshow("result", result)
