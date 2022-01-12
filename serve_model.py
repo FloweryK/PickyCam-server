@@ -89,23 +89,20 @@ class ServeModel:
         img = self.model_inp(img, mask)
         return img
 
-    def inference(self, img, settings={
-        "width_seg": 480,
-        "width_fcr": 240,
-        "width_inp": 100,
-        "pad_ratio_known": 0.01,
-        "pad_ratio_unknown": 0.04,
-        "isDebug": False,
-        "faceDetect": True
-    }):
+    def inference(self, img, settings):
         # config
+        IS_FRONT = settings["isFront"]
+        IS_DEBUG = settings["isDebug"]
+        FACE_DETECT = settings["faceDetect"]
         WIDTH_SEG = settings["width_seg"]
         WIDTH_FCR = settings["width_fcr"]
         WIDTH_INP = settings["width_inp"]
         PAD_RATIO_KNOWN = settings["pad_ratio_known"]
         PAD_RATIO_UNKNOWN = settings["pad_ratio_unknown"]
-        IS_DEBUG = settings["isDebug"]
-        FACE_DETECT = settings["faceDetect"]
+
+        # rotate image if camera is front
+        if IS_FRONT:
+            img = cv2.rotate(img, cv2.ROTATE_180)
 
         # settings
         shape_org = img.shape[:2][::-1]
@@ -117,7 +114,7 @@ class ServeModel:
         self.timer.initialize()
 
         # convert from BGR to RGB
-        img = cv2.resize(img, shape_org, interpolation=cv2.INTER_AREA)
+        # img = cv2.resize(img, shape_org, interpolation=cv2.INTER_AREA)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         # human segmantation
