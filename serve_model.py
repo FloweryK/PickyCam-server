@@ -72,8 +72,9 @@ class ServeModel:
             # find known face
             for i, encoding in enumerate(face_encodings):
                 face_distances = fr.face_distance(self.known_faces, encoding)
+                print(face_distances)
                 
-                known = (np.array(face_distances) < 0.5).any()
+                known = (np.array(face_distances) < 0.3).any()
 
                 if known:
                     knowns[face_to_mask[i]] = True
