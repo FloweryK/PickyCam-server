@@ -197,6 +197,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--video", required=True, type=str)
+    parser.add_argument("--front", default=False, type=bool)
     parser.add_argument("--debug", default=True, type=bool)
     parser.add_argument("--faceDetect", default=True, type=bool)
     parser.add_argument("--width_seg", default=480, type=int)
@@ -208,6 +209,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     video_path = args.video
+
+    isFront = args.front
     isDebug = args.debug
     faceDetect = args.faceDetect
     width_seg = args.width_seg
@@ -217,13 +220,14 @@ if __name__ == "__main__":
     pad_ratio_unknown = args.pad_ratio_unknown
 
     settings = {
+        "isFront": isFront,
+        "isDebug": isDebug,
+        "faceDetect": faceDetect,
         "width_seg": width_seg,
         "width_inp": width_inp,
         "width_fcr": width_fcr,
         "pad_ratio_known": pad_ratio_known,
         "pad_ratio_unknown": pad_ratio_unknown,
-        "isDebug": isDebug,
-        "faceDetect": faceDetect
     }
 
     serve_model = ServeModel()
