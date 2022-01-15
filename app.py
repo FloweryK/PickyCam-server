@@ -29,6 +29,8 @@ socketio = SocketIO(app)
 
 # serve model
 serve_model = ServeModel()
+img = cv2.imread('dummy.jpg')
+serve_model.inference(img)
 
 
 @app.route("/")
