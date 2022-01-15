@@ -27,3 +27,5 @@ RUN pip install face_recognition
 
 VOLUME ["/workspace/temp/focus-on-you"]
 WORKDIR /workspace/temp/focus-on-you
+
+CMD ["python", "app.py", "--host", "0.0.0.0", "--port", "8080"]

@@ -29,7 +29,7 @@ socketio = SocketIO(app)
 
 # serve model
 serve_model = ServeModel()
-img = cv2.imread('dummy.jpg')
+img = cv2.imread('testdata/dummy.jpg')
 serve_model.inference(img)
 
 
