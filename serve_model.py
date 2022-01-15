@@ -1,6 +1,6 @@
 import os
 import cv2
-from face_recognition.api import face_distance, face_encodings, face_locations
+import time
 import numpy as np
 import face_recognition as fr
 from models.segmentation.yolact.model import SegModel
@@ -90,7 +90,15 @@ class ServeModel:
         img = self.model_inp(img, mask)
         return img
 
-    def inference(self, img, settings):
+    def inference(self, img, settings={
+            "isFront": False,
+            "isDebug": False,
+            "faceDetect": True,
+            "width_seg": 480,
+            "width_fcr": 480,
+            "width_inp": 200,
+            "pad_ratio_known": 0.01,
+            "pad_ratio_unknown": 0.04}):
         # config
         IS_FRONT = settings["isFront"]
         IS_DEBUG = settings["isDebug"]
