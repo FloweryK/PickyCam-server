@@ -1,25 +1,11 @@
 import time
-import base64
 import argparse
 import cv2
 import json
-import numpy as np
 from flask import Flask, request
 from flask_socketio import SocketIO
 from serve_model import ServeModel
-
-
-def base64_to_img(string):
-    buffer = base64.b64decode(string)
-    img_np = np.frombuffer(buffer, dtype=np.uint8)
-    img = cv2.imdecode(img_np, flags=1)
-    return img
-
-
-def img_to_base64(img):
-    _, buffer = cv2.imencode(".jpg", img, [int(cv2.IMWRITE_JPEG_QUALITY), 45])
-    string = str(base64.b64encode(buffer))
-    return string
+from utils.images import base64_to_img, img_to_base64
 
 # global? should i change this as a session variable?
 is_processing = False

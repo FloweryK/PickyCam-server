@@ -1,4 +1,5 @@
 import cv2
+import base64
 import numpy as np
 
 def cal_shape(shape, w_target, by4=False):
@@ -66,3 +67,17 @@ def write_text_on_image(img, text):
         img = cv2.putText(img, line, pos, font, fontScale, color, thickness)
 
     return img
+
+
+
+def base64_to_img(string):
+    buffer = base64.b64decode(string)
+    img_np = np.frombuffer(buffer, dtype=np.uint8)
+    img = cv2.imdecode(img_np, flags=1)
+    return img
+
+
+def img_to_base64(img):
+    _, buffer = cv2.imencode(".jpg", img, [int(cv2.IMWRITE_JPEG_QUALITY), 45])
+    string = str(base64.b64encode(buffer))
+    return string
