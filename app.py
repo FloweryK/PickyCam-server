@@ -21,6 +21,8 @@ def img_to_base64(img):
     string = str(base64.b64encode(buffer))
     return string
 
+# global? should i change this as a session variable?
+is_processing = False
 
 # define server
 app = Flask(__name__)
@@ -50,27 +52,38 @@ def on_disconnect():
 
 @socketio.on("request")
 def process(data):
-    # read data
-    string = data["frame"]
-    settings = data["settings"]
-    print(settings)
+    print("request")
 
-    # convert from base64 to cv2 format
-    img = base64_to_img(string)
+    global is_processing
 
-    # inference
-    img_processed = serve_model.inference(img, settings)
+    if not is_processing:
+        is_processing = True
+        
+        # read data
+        string = data["frame"]
+        settings = data["settings"]
+        print(settings)
 
-    # convert from cv2 format to base64
-    string_processed = img_to_base64(img_processed)
+        # convert from base64 to cv2 format
+        img = base64_to_img(string)
 
-    # make json
-    res = json.dumps({
-        "frame": string_processed,
-    })
+        # inference
+        img_processed = serve_model.inference(img, settings)
 
-    # response
-    socketio.emit("response", res, room=request.sid)
+        # convert from cv2 format to base64
+        string_processed = img_to_base64(img_processed)
+
+        # make json
+        res = json.dumps({
+            "frame": string_processed,
+        })
+
+        # response
+        socketio.emit("response", res, room=request.sid)
+
+        is_processing = False
+    else:
+        print("infenrence is ongoing... skip this request")
 
 
 if __name__ == "__main__":
