@@ -1,4 +1,4 @@
-# Focus-on-You
+# PickyCam-server
 
 ### WARNING
 
