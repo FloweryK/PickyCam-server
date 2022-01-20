@@ -2,7 +2,6 @@
 
 ### WARNING
 
-- Right now, face detection is not working as `face_detection` library does not support Windows environment, and I'm running server on Windows. I'll soon find a way to deal with this.
 - This repo is still on development. 
 
 
@@ -11,7 +10,7 @@
 
 I strongly recommend you to work inside a virtual environment.
 
-```
+```bash
 $ pip install -r requirements.txt
 ```
 
@@ -19,9 +18,36 @@ $ pip install -r requirements.txt
 
 ### How to Run Test
 
-```
+```bash
 $ python serve_model.py --video {videopath}
 ```
+
+
+
+### How to Run PickyCam server
+
+```bash
+$ python app.py --host {host} --port {port}
+
+# i use
+$ python app.py --port 8080
+```
+
+default setting of host is `localhost`, but  `port` is always requied. 
+
+
+
+### How to Run PickyCam server (on Docker)
+
+```bash
+# make image (this may take 10~15 mins)
+$ docker build -t pickycam . 
+
+# run server on port 8080
+$ docker run -it -port 8080:8080 --gpus all pickycam
+```
+
+The server runs on `localhost:8080` by default. If you want to change your server address, modify the last line of `Dockerfile`.
 
 
 
@@ -29,4 +55,4 @@ $ python serve_model.py --video {videopath}
 
 Click below image to see sample result video on youtube
 
-[![sample result video](https://img.youtube.com/vi/hA-ZK55d9Kk/0.jpg)](https://youtu.be/hA-ZK55d9Kk)
+[<img src="readme/videoimage.png" alt="sample result video" style="zoom:50%;" />](https://youtu.be/gUQtAsGLEO0)
