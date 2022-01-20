@@ -65,4 +65,4 @@ The server runs on `localhost:8080` by default. If you want to change your serve
 
 Click below image to see sample result video on youtube
 
-[<img src="readme/videoimage.png" alt="sample result video" style="width: 200px;" />](https://youtu.be/gUQtAsGLEO0)
+[<img src="readme/videoimage.png" alt="sample result video" style="width: 250px;" />](https://youtu.be/gUQtAsGLEO0)
