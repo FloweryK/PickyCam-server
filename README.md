@@ -29,7 +29,7 @@ $ python serve_model.py --video {videopath}
 ```bash
 $ python app.py --host {host} --port {port}
 
-# i use
+# i usually use
 $ python app.py --port 8080
 ```
 
