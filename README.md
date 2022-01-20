@@ -6,6 +6,8 @@
 
 
 
+<br/>
+
 ### How to Install
 
 I strongly recommend you to work inside a virtual environment.
@@ -16,6 +18,8 @@ $ pip install -r requirements.txt
 
 
 
+<br/>
+
 ### How to Run Test
 
 ```bash
@@ -23,6 +27,8 @@ $ python serve_model.py --video {videopath}
 ```
 
 
+
+<br/>
 
 ### How to Run PickyCam server
 
@@ -36,6 +42,8 @@ $ python app.py --port 8080
 default setting of host is `localhost`, but  `port` is always requied. 
 
 
+
+<br/>
 
 ### How to Run PickyCam server (on Docker)
 
@@ -51,8 +59,10 @@ The server runs on `localhost:8080` by default. If you want to change your serve
 
 
 
+<br/>
+
 ### Sample Result
 
 Click below image to see sample result video on youtube
 
-[<img src="readme/videoimage.png" alt="sample result video" style="zoom:50%;" />](https://youtu.be/gUQtAsGLEO0)
+[<img src="readme/videoimage.png" alt="sample result video" style="zoom: 33%;" />](https://youtu.be/gUQtAsGLEO0)
