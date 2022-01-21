@@ -54,8 +54,12 @@ class ServeModel:
         img = cv2.resize(img, shape, interpolation=cv2.INTER_AREA)
 
         # extract all faces
+        start = time.time()
         face_locations = fr.face_locations(img)
+        middle = time.time()
         face_encodings = fr.face_encodings(img, face_locations)
+        end = time.time()
+        print(f'face locations(ms): {(middle-start)*1000}, face encodings(ms): {(end-middle)*1000}')
 
         # match face locations to mask
         if len(masks) > 0:
@@ -74,7 +78,7 @@ class ServeModel:
                 face_distances = fr.face_distance(self.known_faces, encoding)
                 print(face_distances)
                 
-                known = (np.array(face_distances) < 0.3).any()
+                known = (np.array(face_distances) < 0.4).any()
 
                 if known:
                     knowns[face_to_mask[i]] = True
@@ -202,7 +206,7 @@ if __name__ == "__main__":
     parser.add_argument("--faceDetect", default=True, type=bool)
     parser.add_argument("--width_seg", default=480, type=int)
     parser.add_argument("--width_fcr", default=480, type=int)
-    parser.add_argument("--width_inp", default=100, type=int)
+    parser.add_argument("--width_inp", default=200, type=int)
     parser.add_argument("--pad_ratio_known", default=0.01, type=float)
     parser.add_argument("--pad_ratio_unknown", default=0.04, type=float)
 
