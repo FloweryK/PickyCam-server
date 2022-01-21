@@ -35,12 +35,19 @@ def replace_masked_area(img1, img2, mask):
     return result
 
 
-def overlay_mask(img, mask):
+def overlay_mask(img, mask, color=(0, 255, 0), contour=False):
     result = img.copy()  # deepcopy doesnt work if you directly use img
     mask_color = np.zeros(result.shape, result.dtype)
-    mask_color[:, :] = (0, 255, 0)
+    mask_color[:, :] = color
     mask_color = cv2.bitwise_and(mask_color, mask_color, mask=mask)
     cv2.addWeighted(mask_color, 0.7, result, 1, 0, result)
+
+    if contour:
+        mask_gray = np.repeat(mask[..., np.newaxis], 3, axis=2)
+        mask_gray = cv2.cvtColor(mask_gray, cv2.COLOR_RGB2GRAY)
+        cnt, _ = cv2.findContours(mask_gray, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        cv2.drawContours(result, cnt, -1, (255), 2)
+    
     return result
 
 
@@ -55,17 +62,25 @@ def merge_4by4(img11, img12, img21, img22, width):
     return result
 
 
-def write_text_on_image(img, text):
-    # write fps info
+def write_text_on_image(img, text, color_text=(0, 255, 0), color_boundary=(0, 0, 0)):
     for i, line in enumerate(text.split("\n")):
-        pos = (5, 15 + i * 23)
+        pos = (5, 20 + i * 23)
         font = cv2.FONT_HERSHEY_SIMPLEX
         fontScale = 0.7
-        color = (0, 0, 0)  # black
-        thickness = 2
+        color = color_boundary
+        thickness = 4
 
         img = cv2.putText(img, line, pos, font, fontScale, color, thickness)
 
+    for i, line in enumerate(text.split("\n")):
+        pos = (5, 20 + i * 23)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 0.7
+        color = color_text
+        thickness = 1
+
+        img = cv2.putText(img, line, pos, font, fontScale, color, thickness)
+    
     return img
 
 
