@@ -10,6 +10,7 @@ venv/
 .vscode
 
 # custom files
+test_data/
 **/*.avi
 **/**.png
 **/**.pth

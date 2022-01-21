@@ -1,4 +1,5 @@
 import time
+import datetime
 import argparse
 import cv2
 import json
@@ -17,7 +18,7 @@ socketio = SocketIO(app)
 
 # serve model
 serve_model = ServeModel()
-img = cv2.imread('testdata/dummy.jpg')
+img = cv2.imread('dummy.jpg')
 serve_model.inference(img)
 
 
@@ -48,6 +49,8 @@ def process(data):
         # read data
         string = data["frame"]
         settings = data["settings"]
+
+        print(datetime.datetime.now())
         print(settings)
 
         # convert from base64 to cv2 format
