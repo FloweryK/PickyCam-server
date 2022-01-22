@@ -62,24 +62,13 @@ def merge_4by4(img11, img12, img21, img22, width):
     return result
 
 
-def write_text_on_image(img, text, color_text=(0, 255, 0), color_boundary=(0, 0, 0)):
+def write_text_on_image(img, text, color_text=(0, 255, 0), color_boundary=(0, 0, 0), fontScale=0.9):
     for i, line in enumerate(text.split("\n")):
-        pos = (5, 20 + i * 23)
+        pos = (8, 25 + i * 30)
         font = cv2.FONT_HERSHEY_SIMPLEX
-        fontScale = 0.7
-        color = color_boundary
-        thickness = 4
 
-        img = cv2.putText(img, line, pos, font, fontScale, color, thickness)
-
-    for i, line in enumerate(text.split("\n")):
-        pos = (5, 20 + i * 23)
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        fontScale = 0.7
-        color = color_text
-        thickness = 1
-
-        img = cv2.putText(img, line, pos, font, fontScale, color, thickness)
+        img = cv2.putText(img, line, pos, font, fontScale, color_boundary, 5)
+        img = cv2.putText(img, line, pos, font, fontScale, color_text, 2)
     
     return img
 
