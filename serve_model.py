@@ -176,21 +176,23 @@ class ServeModel:
         img_erased = replace_masked_area(img, img_inp, mask)
         self.timer.check("merging")
 
-        # CODES BELOW ARE SOLELY FOR DEV OPTION
-        # make img with mask color
-        img_mask = overlay_mask(img, mask)
-
-        # tetris display
         if IS_DEBUG:
+            # make img with mask color
+            img_mask = overlay_mask(img, mask)
+
+            # get merged result
             result = merge_4by4(img, img_mask, img_inp, img_erased, width=500)
+            
+            self.timer.check("dev merging")
         else:
             result = img_erased
+
+        # convert from rgb to bgr
         result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
-        self.timer.check("dev merging")
 
         # write fps info
         if IS_DEBUG:
-            result = write_text_on_image(result, self.timer.get_result_as_text())
+            result = write_text_on_image(result, self.timer.get_result_as_text(), fontScale=0.7)
 
         return result
 
@@ -208,7 +210,7 @@ if __name__ == "__main__":
     parser.add_argument("--width_fcr", default=480, type=int)
     parser.add_argument("--width_inp", default=200, type=int)
     parser.add_argument("--pad_ratio_known", default=0.01, type=float)
-    parser.add_argument("--pad_ratio_unknown", default=0.04, type=float)
+    parser.add_argument("--pad_ratio_unknown", default=0.01, type=float)
 
     args = parser.parse_args()
 
