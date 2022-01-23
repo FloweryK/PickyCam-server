@@ -177,8 +177,14 @@ class ServeModel:
         self.timer.check("merging")
 
         if IS_DEBUG:
-            # make img with mask color
-            img_mask = overlay_mask(img, mask)
+            # add unknown mask color to img
+            img_mask = overlay_mask(img, mask, color=(0, 255, 0), weight=0.5)
+
+            # add known mask color to img
+            mask_known = (mask_known > 0).astype(np.uint8)
+            mask_known = cv2.resize(mask_known, shape_org, interpolation=cv2.INTER_NEAREST)
+            img_mask = overlay_mask(img_mask, mask_known, color=(0, 0, 255), weight=0.5)
+
 
             # get merged result
             result = merge_4by4(img, img_mask, img_inp, img_erased, width=500)
@@ -203,9 +209,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--video", required=True, type=str)
-    parser.add_argument("--front", default=False, type=bool)
-    parser.add_argument("--debug", default=True, type=bool)
-    parser.add_argument("--faceDetect", default=True, type=bool)
+    parser.add_argument("--front", default=False, type=str)
+    parser.add_argument("--debug", default=True, type=str)
+    parser.add_argument("--faceDetect", default=True, type=str)
     parser.add_argument("--width_seg", default=480, type=int)
     parser.add_argument("--width_fcr", default=480, type=int)
     parser.add_argument("--width_inp", default=200, type=int)
@@ -215,10 +221,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     video_path = args.video
-
-    isFront = args.front
-    isDebug = args.debug
-    faceDetect = args.faceDetect
+    isFront = args.front == "True"
+    isDebug = args.debug == "True"
+    faceDetect = args.faceDetect == "True"
     width_seg = args.width_seg
     width_fcr = args.width_fcr
     width_inp = args.width_inp

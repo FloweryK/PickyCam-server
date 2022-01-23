@@ -35,12 +35,12 @@ def replace_masked_area(img1, img2, mask):
     return result
 
 
-def overlay_mask(img, mask, color=(0, 255, 0), contour=False):
+def overlay_mask(img, mask, color=(0, 255, 0), weight=0.7, contour=False):
     result = img.copy()  # deepcopy doesnt work if you directly use img
     mask_color = np.zeros(result.shape, result.dtype)
     mask_color[:, :] = color
     mask_color = cv2.bitwise_and(mask_color, mask_color, mask=mask)
-    cv2.addWeighted(mask_color, 0.7, result, 1, 0, result)
+    cv2.addWeighted(mask_color, weight, result, 1, 0, result)
 
     if contour:
         mask_gray = np.repeat(mask[..., np.newaxis], 3, axis=2)
